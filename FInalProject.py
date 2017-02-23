@@ -28,6 +28,8 @@ def logisticRegressionSGD(dataset, weights, stepSize, lambdaValue):
 
     random.shuffle(order)
 
+    datasetSize = dataset.shape[1]
+
     for k in range(0, 2):
         for i in order:
             if i == 0 or i == 1 or i == 2:
@@ -37,10 +39,32 @@ def logisticRegressionSGD(dataset, weights, stepSize, lambdaValue):
                 dotProduct = np.dot(weightTranspose, dataset[i])
                 lastTerm = sigmoid(dotProduct)
                 partial = dataset[i, j] * (dataset[i, 2] - lastTerm)
-                weights[j] -= stepSize * (partial - (2 * lambdaValue * weightTranspose[j]))
+                weights[j] -= stepSize * (partial - ((2 / datasetSize) * lambdaValue * weightTranspose[j]))
 
 
     return weights
+
+def testingNewWeight(dataset, weights):
+    order = []
+
+    for i in range(1, dataset.shape[0]):
+        order.append(i)
+
+    random.shuffle(order)
+
+    for i in order:
+        if i == 0 or i == 1 or i == 2:
+            continue
+        for j in range(1, dataset.shape[1]):
+            weightTranspose = np.transpose(weights)
+            dotProduct = np.dot(weightTranspose, dataset[i])
+            lastTerm = sigmoid(dotProduct)
+
+            if (lastTerm >= 0.5):
+                yValue = 1
+            else:
+                yValue = 0
+
 
 def sigmoid(x):
     try:
@@ -56,6 +80,8 @@ def main():
     trainingWeights = createWeights(training)
 
     resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, LAMBDA)
+
+    testingNewWeight(test, resultWeights)
 
     largestCoef = -100000
     smallestCoef = 1000000
