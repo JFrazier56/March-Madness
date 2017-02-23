@@ -18,10 +18,7 @@ def processData():
 def logisticRegressionSGD(dataset, weights, stepSize):
 
     order = []
-    weights = []
 
-    for i in range(0, dataset.shape[0]):
-        weights += [0]
     for i in range(1, dataset.shape[0]):
         order.append(i)
 
@@ -52,8 +49,15 @@ def sigmoid(x):
 def main():
     training, test = processData()
 
-    print(training)
-    print(test)
+    trainingWeights = createWeights(training)
+
+def createWeights(dataset):
+    weights = []
+
+    for i in range(0, dataset.shape[0]):
+        weights += [0]
+
+    return weights
 
 if __name__ == "__main__":
     main()
