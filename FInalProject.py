@@ -6,7 +6,7 @@ import math
 SIZE_TRAINING = 0.8
 
 def processData():
-    detailed_results = pd.read_csv('RegularSeasonDetailedResults.csv')
+    detailed_results = pd.read_csv('averaged_stats.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
