@@ -5,8 +5,12 @@ import math
 
 SIZE_TRAINING = 0.8
 
+STEP_SIZE = 0.00001
+
+LAMBDA = 1
+
 def processData():
-    detailed_results = pd.read_csv('averaged_stats.csv')
+    detailed_results = pd.read_csv('RegularizedSeasonDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -15,7 +19,7 @@ def processData():
 
     return training, test
 
-def logisticRegressionSGD(dataset, weights, stepSize):
+def logisticRegressionSGD(dataset, weights, stepSize, lambdaValue):
 
     order = []
 
@@ -32,8 +36,8 @@ def logisticRegressionSGD(dataset, weights, stepSize):
                 weightTranspose = np.transpose(weights)
                 dotProduct = np.dot(weightTranspose, dataset[i])
                 lastTerm = sigmoid(dotProduct)
-                partial = dataset[i, j] * (dataset[i, 0] - lastTerm)
-                weights[j] -= partial * stepSize
+                partial = dataset[i, j] * (dataset[i, 2] - lastTerm)
+                weights[j] -= stepSize * (partial - (2 * lambdaValue * weightTranspose[j]))
 
 
     return weights
@@ -51,10 +55,36 @@ def main():
 
     trainingWeights = createWeights(training)
 
+    resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, LAMBDA)
+
+    largestCoef = -100000
+    smallestCoef = 1000000
+    largestIndex = 0
+    smallestIndex = 0
+
+    index = 0
+
+    print(resultWeights)
+
+    for i in resultWeights:
+        if i > largestCoef:
+            largestCoef = i
+            largestIndex = index
+        if i < smallestCoef:
+            smallestCoef = i
+            smallestIndex = index
+        index += 1
+
+    print(largestCoef)
+    print(largestIndex)
+    print(smallestCoef)
+    print(smallestIndex)
+
+
 def createWeights(dataset):
     weights = []
 
-    for i in range(0, dataset.shape[0]):
+    for i in range(0, dataset.shape[1]):
         weights += [0]
 
     return weights
