@@ -18,6 +18,10 @@ def processData():
 def logisticRegressionSGD(dataset, weights, stepSize):
 
     order = []
+    weights = []
+
+    for i in range(0, dataset.shape[0]):
+        weights += [0]
     for i in range(1, dataset.shape[0]):
         order.append(i)
 
@@ -25,6 +29,8 @@ def logisticRegressionSGD(dataset, weights, stepSize):
 
     for k in range(0, 2):
         for i in order:
+            if i == 0 or i == 1 or i == 2:
+                continue
             for j in range(1, dataset.shape[1]):
                 weightTranspose = np.transpose(weights)
                 dotProduct = np.dot(weightTranspose, dataset[i])
