@@ -49,10 +49,12 @@ def testingNewWeight(dataset, weights):
         dotProduct = np.dot(weightTranspose, dataset[i])
         lastTerm = sigmoid(dotProduct)
         if (lastTerm >= 0.5):
-            yValue = 1
+            yValue = 1.0
         else:
-            yValue = 0
-        LogLoss += (dataset[i][2] - yValue) ** 2
+            yValue = 0.0
+
+        if dataset[i][2] == yValue:
+            LogLoss += 1.0
 
     return LogLoss / dataset.shape[0]
 
@@ -85,30 +87,30 @@ def main():
                 resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, LAMBDA, iterations[i])
                 test_loss = testingNewWeight(test, resultWeights)
                 total_loss += test_loss
-
+                print resultWeights
             all_testloss += [total_loss / 3]
             print total_loss / 3
 
         print all_testloss
-        title = 'Logisitic Regression Test-Data Loss versus Iterations on Dataset'
+        title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
         graphLoss(iterations, all_testloss, title)
 
     else :
         training, test = processData()
-        min_loss = float("inf")
+        min_loss = float("-inf")
         best_lambda = -1
         lambdas = [1, 2, 4, 8, 16, 32, 64, 128]
         all_loss = []
 
         for i in range(0, len(lambdas)):
             total_loss = 0
-            for j in range(0, 3):
+            for j in range(0, 1):
                 trainingWeights = createWeights(training)
                 resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, lambdas[i], 1)
                 test_loss = testingNewWeight(test, resultWeights)
                 total_loss += test_loss
-            total_loss = total_loss / 3
-            if(total_loss < min_loss):
+            total_loss = total_loss / 1
+            if(total_loss > min_loss):
                 best_lambda = lambdas[i]
                 min_loss = total_loss
 
@@ -116,7 +118,7 @@ def main():
         print all_loss
         print "Best Lambda:", best_lambda
         print "Min Loss:", min_loss
-        title = 'Logisitic Regression Test-Data Loss versus Lambda on Dataset'
+        title = 'Logisitic Regression Correctly Predicted versus Lambda on Dataset'
         graphLoss(lambdas, all_loss, title)
 
 
