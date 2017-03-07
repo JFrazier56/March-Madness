@@ -3,11 +3,13 @@ import pandas as pd
 import random
 import math
 import matplotlib.pyplot as mp
+from sklearn.neighbors import KNeighborsClassifier
 
 SIZE_TRAINING = 0.8
 LAMBDA_FOUND = True
 STEP_SIZE = 0.00001
 LAMBDA = 16
+num_neightbors = 285
 
 def processData():
     detailed_results = pd.read_csv('RegularizedSeasonDetailed.csv')
@@ -58,7 +60,13 @@ def testingNewWeight(dataset, weights):
 
     return LogLoss / dataset.shape[0]
 
+def computeKNNLoss(predicted, actual):
+    LogLoss = 0
+    for i in range(0, len(predicted)):
+        if predicted[i] == actual[i]:
+            LogLoss += 1.0
 
+    return LogLoss / len(predicted)
 
 def sigmoid(x):
     try:
@@ -77,23 +85,43 @@ def graphLoss(iterations, all_testloss, title):
 
 def main():
     if(LAMBDA_FOUND):
-        iterations = [1, 3, 5, 10, 15]
-        all_testloss = []
+        # iterations = [1, 3, 5, 10, 15]
+        # all_testloss = []
         training, test = processData()
-        for i in range(0, len(iterations)):
-            total_loss = 0
-            for j in range(0, 3):
-                trainingWeights = createWeights(training)
-                resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, LAMBDA, iterations[i])
-                test_loss = testingNewWeight(test, resultWeights)
-                total_loss += test_loss
-                print resultWeights
-            all_testloss += [total_loss / 3]
-            print total_loss / 3
+        # for i in range(0, len(iterations)):
+        #     total_loss = 0
+        #     for j in range(0, 3):
+        #         trainingWeights = createWeights(training)
+        #         resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, LAMBDA, iterations[i])
+        #         test_loss = testingNewWeight(test, resultWeights)
+        #         total_loss += test_loss
+        #         print resultWeights
+        #     all_testloss += [total_loss / 3]
+        #     print total_loss / 3
+        #
+        # print all_testloss
+        # title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
+        # graphLoss(iterations, all_testloss, title)
 
-        print all_testloss
-        title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
-        graphLoss(iterations, all_testloss, title)
+
+        neighbors = [i * 10 for i in range(1, 40)]
+        KNN_all_test_loss = []
+        for neighbor in neighbors:
+            clf = KNeighborsClassifier(neighbor, weights="uniform")
+            y_values = training[:, 2]
+            x_values = training[:, 3:]
+            clf.fit(x_values, y_values)
+
+            test_x_values = test[:, 3:]
+            z = clf.predict(test_x_values)
+
+            test_loss = computeKNNLoss(z, test[:, 2])
+            KNN_all_test_loss += [test_loss]
+
+        title = 'K Nearest Neighbors Correctly Predicted verses Num_Neighbors'
+        graphLoss(neighbors, KNN_all_test_loss, title)
+
+
 
     else :
         training, test = processData()
@@ -132,3 +160,50 @@ def createWeights(dataset):
 
 if __name__ == "__main__":
     main()
+
+
+
+"""
+
+        ** THIS WAS THE CODE THAT WAS USED TO DETERMINE THE BEST WEIGHT TYPE AND NUMBER OF NEIGHBORS***
+
+        for ki in range(0, 10):
+            training, test = processData()
+            maxPercentRight = 0.0
+            maxWeightType = ""
+            maxNeighborNum = 0
+            for weight in ["distance", "uniform"]:
+                neighbors = [i * 10 for i in range(10, 40)]
+                for neighbor in neighbors:
+                    clf = KNeighborsClassifier(neighbor, weights=weight)
+                    y_values = training[:, 2]
+                    x_values = training[:, 3:]
+                    clf.fit(x_values, y_values)
+
+                    test_x_values = test[:, 3:]
+                    z = clf.predict(test_x_values)
+
+                    totalCount = 0
+                    correctCount = 0
+
+                    for i in range(0, len(z)):
+                        predicted = z[i]
+                        actual = test[i, 2]
+
+                        if predicted == actual:
+                            correctCount += 1
+
+                        totalCount += 1
+
+                    percentageRight = float(correctCount) / float(totalCount)
+
+                    if percentageRight > maxPercentRight:
+                        maxPercentRight = percentageRight
+                        maxWeightType = weight
+                        maxNeighborNum = neighbor
+
+
+            print "Best performance in round %d was weight type %s with num_neighbors = %d with a percentage of %.10f" % (ki, maxWeightType, maxNeighborNum, maxPercentRight)
+
+
+"""
