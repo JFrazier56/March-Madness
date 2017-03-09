@@ -2,6 +2,37 @@ import sqlite3 as sql
 import pandas.io.sql as pd_sql
 import csv
 
+def CombineSeedsOdds():
+    con = sql.connect(":memory:")
+    con.text_factory = str
+    cur = con.cursor()
+    cur.execute("CREATE TABLE seeds (Year, Team, Seed);")
+    with open('Data\TournamentSeedsNumbers.csv', 'rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [(i['Year'], i['Team'], i['Seed']) for i in dr]
+
+    cur.executemany("INSERT INTO seeds (Year, Team, Seed) VALUES (?, ?, ?);", to_db)
+
+    cur.execute("CREATE TABLE odds (Season, Team1, Team2, Odds1);")
+
+    with open('Data\VegasOddsTeamNumbers.csv','rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [(i['Season'],i['Team1'],i['Team2'],i['Odds1']) for i in dr]
+
+    cur.executemany("INSERT INTO odds (Season, Team1, Team2, Odds1) VALUES (?, ?, ?, ?);", to_db)
+
+
+    table = pd_sql.read_sql('SELECT DISTINCT o.Odds1, s1.Seed seed1, s2.Seed seed2 '
+              'FROM seeds s1, seeds s2, odds o '
+              'WHERE s1.Year = s2.Year AND s2.Year = o.Season AND o.Season = s1.Year '
+              'AND s1.Team = o.Team1 AND s2.Team = o.Team2;', con)
+
+    table.to_csv('Data\odds_seeds.csv')
+    con.commit()
+    con.close()
+
+
+
 def CreateTable_WINSUM():
     con = sql.connect(":memory:")
     cur = con.cursor()
@@ -9,7 +40,7 @@ def CreateTable_WINSUM():
                 "Numot,Wfgm,Wfga,Wfgm3,Wfga3,Wftm,Wfta,Wor,Wdr,Wast,Wto,Wstl,Wblk,Wpf,Lfgm,"
                 "Lfga,Lfgm3,Lfga3,Lftm,Lfta,Lor,Ldr,Last,Lto,Lstl,Lblk,Lpf);")
 
-    with open('RegularSeasonDetailedResults.csv','rb') as fin:
+    with open('Data\RegularSeasonDetailedResults.csv','rb') as fin:
         dr = csv.DictReader(fin)
         to_db = [(i['Season'],i['Daynum'],i['Wteam'],i['Wscore'],i['Lteam'],
                   i['Lscore'],i['ScoreDiff'],i['Wloc'],i['Numot'],i['Wfgm'],
@@ -254,7 +285,7 @@ def ReformatOriginal():
     con.close()
 
 def main():
-    step = ""
+    step = "Learn Vegas Odds"
     if step == "Regularize Regular Season" :
         CreateTable_WINSUM()
         CreateTable_LOSESUM()
@@ -264,6 +295,10 @@ def main():
         return
     elif step == "Seed-Tournament Table":
         return
+    elif step == "Learn Vegas Odds":
+        CombineSeedsOdds()
+
+
 
 
 if __name__ == "__main__":
