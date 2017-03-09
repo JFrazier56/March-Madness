@@ -264,7 +264,7 @@ def main():
         return
     elif step == "Seed-Tournament Table":
         return
-    
+
 
 if __name__ == "__main__":
     main()
