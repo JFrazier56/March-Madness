@@ -253,9 +253,21 @@ def ReformatOriginal():
     con.commit()
     con.close()
 
+def main():
+    step = ""
+    if step == "Regularize Regular Season" :
+        CreateTable_WINSUM()
+        CreateTable_LOSESUM()
+        CombineTables()
+        ReformatOriginal()
+    elif step == "Regularize Tournament Data" :
+        return
+    elif step == "Seed-Tournament Table":
+        return
+    
 
-"""CreateTable_WINSUM()"""
-"""CreateTable_LOSESUM()"""
-"""CombineTables()"""
-ReformatOriginal()
+if __name__ == "__main__":
+    main()
+
+
 
