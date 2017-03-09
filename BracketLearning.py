@@ -1,18 +1,18 @@
 import numpy as np
 import pandas as pd
-import random
 import math
-import matplotlib.pyplot as mp
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import RandomizedLogisticRegression
 from sklearn.neural_network import MLPClassifier
 
 SIZE_TRAINING = 0.8
-LAMBDA_FOUND = True
 STEP_SIZE = 0.00001
 LAMBDA = 16
 num_neightbors = 285
+
+all_teams_average_stats = pd.read_csv('Data/averaged_stats.csv')
+all_teams_average_stats = all_teams_average_stats.data
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
@@ -123,7 +123,7 @@ def runNeuralNetwork(X_training, y_training):
     return mlp
 
 # Feature selection on the given datasets
-def featureSelect(trainingDataset, testingDataset, bracketDataset):
+def featureSelect(trainingDataset, testingDataset):
     print "Starting Feature Selection..."
     X_training = trainingDataset[:, 3:]
     y_training = trainingDataset[:, 2]
@@ -131,21 +131,18 @@ def featureSelect(trainingDataset, testingDataset, bracketDataset):
     X_testing = testingDataset[:, 3:]
     y_testing = testingDataset[:, 2]
 
-    bracket_testing = bracketDataset[:, 3:]
-
     randomlr = RandomizedLogisticRegression()
     X_training = randomlr.fit_transform(X_training, y_training)
     X_testing = randomlr.transform(X_testing)
-    bracket_testing = randomlr.transform(bracket_testing)
 
-    return X_training, y_training, X_testing, y_testing, bracket_testing
+    return X_training, y_training, X_testing, y_testing, randomlr
 
 def main():
     # Pre-Process the data
     trainingDataset, testingDataset, bracketDataset = processData()
 
     # Feature Selection
-    X_training, y_training, X_testing, y_testing, bracket_testing = featureSelect(trainingDataset, testingDataset, bracketDataset)
+    X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
 
     # Logistic Regression
     resultWeights = runLogisticRegression(X_training, y_training)
@@ -160,7 +157,86 @@ def main():
     NN_mlp = runNeuralNetwork(X_training, y_training)
 
 
+def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
+    full_dataset = generateBracketDataset(bracket_dataset)
+    winning_teams = []
+    while len(winning_teams) != 1:
+        winning_teams = []
 
+        teams = full_dataset[:, :1]
+        teams_data = full_dataset[:, 2:]
+        teams_data = feature_selector.transform(teams_data)
+
+        game_results = clf.predict(teams_data)
+
+        for i in range(0, len(game_results)):
+            result = game_results[i]
+            if result == 1:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams += [winner]
+
+        if len(winning_teams) != 1:
+            print winning_teams
+            full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
+            full_dataset = generateBracketDataset(full_dataset)
+
+    print "Classifier %s predicted that the overall winner would be %d" % (classif_name, winning_teams[0])
+
+
+def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector):
+    full_dataset = generateBracketDataset(bracket_dataset)
+    winning_teams = []
+    while len(winning_teams) != 1:
+        winning_teams = []
+
+        teams = full_dataset[:, :1]
+        teams_data = full_dataset[:, 2:]
+        teams_data = feature_selector.transform(teams_data)
+
+        game_results = logisticRegressionPredict(teams_data, weights)
+
+        for i in range(0, len(game_results)):
+            result = game_results[i]
+            if result == 1:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams += [winner]
+
+        if len(winning_teams) != 1:
+            print winning_teams
+            full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
+            full_dataset = generateBracketDataset(full_dataset)
+
+    print "Logistic Regression predicted that the overall winner would be %d" % winning_teams[0]
+
+
+def buildBracketDataset(winning_teams, num_matches):
+    dataset = np.zeroes(shape=(num_matches, 2))
+    for i in range(0, num_matches):
+        team1 = winning_teams[2 * i]
+        team2 = winning_teams[(2 * i) + 1]
+        dataset[i] = [team1, team2]
+
+    return dataset
+
+
+def generateBracketDataset(bracket_dataset):
+    num_rows = bracket_dataset.shape[0]
+    full_dataset = np.zeroes(shape=[num_rows, 32])
+    for i in range(0, bracket_dataset.shape[1]):
+        team1_id = bracket_dataset[i, 1]
+        team2_id = bracket_dataset[i, 2]
+        team1_stats = all_teams_average_stats[team1_id]
+        team2_stats = all_teams_average_stats[team2_id]
+        new_row = np.c_[team1_id, team2_id, 0, 0, team1_stats, team2_stats]
+        full_dataset[i] = new_row
+
+    return full_dataset
 
 def createWeights(dataset):
     weights = []
@@ -172,81 +248,3 @@ def createWeights(dataset):
 
 if __name__ == "__main__":
     main()
-
-
-
-"""
-
-        ** THIS WAS THE CODE THAT WAS USED TO DETERMINE THE BEST WEIGHT TYPE AND NUMBER OF NEIGHBORS***
-
-        for ki in range(0, 10):
-            training, test = processData()
-            maxPercentRight = 0.0
-            maxWeightType = ""
-            maxNeighborNum = 0
-            for weight in ["distance", "uniform"]:
-                neighbors = [i * 10 for i in range(10, 40)]
-                for neighbor in neighbors:
-                    clf = KNeighborsClassifier(neighbor, weights=weight)
-                    y_values = training[:, 2]
-                    x_values = training[:, 3:]
-                    clf.fit(x_values, y_values)
-
-                    test_x_values = test[:, 3:]
-                    z = clf.predict(test_x_values)
-
-                    totalCount = 0
-                    correctCount = 0
-
-                    for i in range(0, len(z)):
-                        predicted = z[i]
-                        actual = test[i, 2]
-
-                        if predicted == actual:
-                            correctCount += 1
-
-                        totalCount += 1
-
-                    percentageRight = float(correctCount) / float(totalCount)
-
-                    if percentageRight > maxPercentRight:
-                        maxPercentRight = percentageRight
-                        maxWeightType = weight
-                        maxNeighborNum = neighbor
-
-
-            print "Best performance in round %d was weight type %s with num_neighbors = %d with a percentage of %.10f" % (ki, maxWeightType, maxNeighborNum, maxPercentRight)
-
-
-"""
-
-"""
-
-        *** THIS WAS THE CODE USED TO FIND THE BEST LAMBDA VALUE FOR LOGISTIC REGRESSION ***
-
-        training, test = processData()
-        min_loss = float("-inf")
-        best_lambda = -1
-        lambdas = [1, 2, 4, 8, 16, 32, 64, 128]
-        all_loss = []
-
-        for i in range(0, len(lambdas)):
-            total_loss = 0
-            for j in range(0, 1):
-                trainingWeights = createWeights(training)
-                resultWeights = logisticRegressionSGD(training, trainingWeights, STEP_SIZE, lambdas[i], 1)
-                test_loss = testingNewWeight(test, resultWeights)
-                total_loss += test_loss
-            total_loss = total_loss / 1
-            if(total_loss > min_loss):
-                best_lambda = lambdas[i]
-                min_loss = total_loss
-
-            all_loss += [total_loss]
-        print all_loss
-        print "Best Lambda:", best_lambda
-        print "Min Loss:", min_loss
-        title = 'Logisitic Regression Correctly Predicted versus Lambda on Dataset'
-        graphLoss(lambdas, all_loss, title)
-
-"""
