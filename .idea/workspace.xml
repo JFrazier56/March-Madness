@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b9a93f74-8d50-4cc9-a46f-9e70da045e00" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Graphs/PlotErrorIterations.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Graphs/PlotLambda.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Graphs/Probability.PNG" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/untitled.iml" afterPath="$PROJECT_DIR$/.idea/untitled.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FInalProject.py" afterPath="$PROJECT_DIR$/FInalProject.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SQLScripts.py" afterPath="$PROJECT_DIR$/SQLScripts.py" />
-    </list>
+    <list default="true" id="b9a93f74-8d50-4cc9-a46f-9e70da045e00" name="Default" comment="" />
     <ignored path="C:\Users\Damir Zhaksilikov\Documents\University of Washington\Winter 2017\CSE 446\March Madness\March-Madness\.idea\shelf/" />
     <ignored path="C:\Users\jason\PycharmProjects\March-Madness\.idea\shelf/" />
     <ignored path="$PROJECT_DIR$/.idea/shelf/" />
@@ -329,9 +319,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="281" y="0" width="2699" height="1931" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21922933" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21922933" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329653" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
