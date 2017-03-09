@@ -284,6 +284,9 @@ def ReformatOriginal():
     con.commit()
     con.close()
 
+def ReformatTournamentData():
+
+
 def main():
     step = "Learn Vegas Odds"
     if step == "Regularize Regular Season" :
@@ -292,7 +295,7 @@ def main():
         CombineTables()
         ReformatOriginal()
     elif step == "Regularize Tournament Data" :
-        return
+        ReformatTournamentData()
     elif step == "Seed-Tournament Table":
         return
     elif step == "Learn Vegas Odds":
