@@ -174,20 +174,20 @@ def main():
     (lambda_values, NN_all_testloss) = runNeuralNetwork(X_training, y_training, X_testing, y_testing)
 
     # Plot iteration vs. Percent right
-    print "Max percentage right with Logisitc Regression:\t %.10f" % max(all_testloss)
+    print "Max percentage right with Logisitc Regression:\t %.10f with an index of: %d" % (max(all_testloss), all_testloss.index(max(all_testloss)))
     title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
     graphLoss(iterations, all_testloss, title)
 
     # Graph the number of neighbors to the percentage of correct guesses
-    print "Max percentage right with K Nearest Neighbors:\t %.10f" % max(KNN_all_testloss)
+    print "Max percentage right with K Nearest Neighbors:\t %.10f with an index of: %d" % (max(KNN_all_testloss), all_testloss.index(max(KNN_all_testloss)))
     title = 'K Nearest Neighbors Correctly Predicted verses Num_Neighbors'
     graphLoss(neighbors, KNN_all_testloss, title)
 
-    print "Max percentage right with Random Forest:\t\t %.10f" % max(RF_all_testloss)
+    print "Max percentage right with Random Forest:\t\t %.10f with an index of: %d" % (max(RF_all_testloss), all_testloss.index(max(RF_all_testloss)))
     title = 'Random Forest Correctly Predicted versus Num_estimators on Dataset'
     graphLoss(num_estimators, RF_all_testloss, title)
 
-    print "Max percentage right with Neural Network:\t\t %.10f" % max(NN_all_testloss)
+    print "Max percentage right with Neural Network:\t\t %.10f with an index of: %d" % (max(NN_all_testloss), all_testloss.index(max(NN_all_testloss)))
     title = 'Neural Network Correctly Predicted versus Lambda Value on Dataset'
     graphLoss(lambda_values, NN_all_testloss, title)
 
