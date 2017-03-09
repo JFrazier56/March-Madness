@@ -240,8 +240,9 @@ def ReformatOriginal():
 
     table.to_csv('Data/ALL_RegularizedSeasonDetailedWtoL.csv')
 
-    table = pd_sql.read_sql('SELECT DISTINCT aw.Season, dw.Wteam as team1, '
-                            'dl.Lteam as team2, '
+    table = pd_sql.read_sql('SELECT DISTINCT aw.Season, '
+                            'dl.Lteam as team1, '
+                            'dw.Wteam as team2, '
                             '0 as result, '
                             'dw.Daynum as daynum,'
                             '-1 * dw.Wloc as loc, '
@@ -377,8 +378,9 @@ def ReformatTournamentData():
 
     table.to_csv('Data/ALL_RegularizedTourneyDetailedWtoL.csv')
 
-    table = pd_sql.read_sql('SELECT DISTINCT aw.Season, dw.Wteam as team1, '
-                            'dl.Lteam as team2, '
+    table = pd_sql.read_sql('SELECT DISTINCT aw.Season, '
+                            'dl.Lteam as team1, '
+                            'dw.Wteam as team2,'
                             '0 as result, '
                             'dw.Daynum as daynum,'
                             '-1 * dw.Wloc as loc, '
@@ -427,8 +429,113 @@ def ReformatTournamentData():
     con.commit()
     con.close()
 
+def AddSeeds():
+    con = sql.connect(":memory:")
+    cur = con.cursor()
+    con.text_factory = str
+
+    cur.execute('CREATE TABLE tourney_data (Season, team1, team2, result, daynum, loc, avg_score_1, avg_diff_1, '
+                            'avg_numot_1, avg_fgm_1, avg_fga_1, avg_fgm3_1, avg_ftm_1, avg_fta_1, avg_or_1, avg_dr_1, '
+                            'avg_ast_1, avg_to_1, avg_stl_1, avg_blk_1, avg_pf_1, avg_score_2, avg_diff_2, avg_numot_2, '
+                            'avg_fgm_2, avg_fga_2, avg_fgm3_2, avg_ftm_2, avg_fta_2, avg_or_2, avg_dr_2, '
+                            'avg_ast_2, avg_to_2, avg_stl_2, avg_blk_2, avg_pf_2);')
+
+    with open('Data/ALL_RegularizedTourneyDetailed.csv', 'rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [(i['Season'], i['team1'], i['team2'], i['result'], i['daynum'], i['loc'], i['avg_score_1'], i['avg_diff_1'],
+                 i['avg_numot_1'], i['avg_fgm_1'], i['avg_fga_1'], i['avg_fgm3_1'], i['avg_ftm_1'], i['avg_fta_1'], i['avg_or_1'], i['avg_dr_1'],
+                 i['avg_ast_1'], i['avg_to_1'], i['avg_stl_1'], i['avg_blk_1'], i['avg_pf_1'], i['avg_score_2'], i['avg_diff_2'], i['avg_numot_2'],
+                 i['avg_fgm_2'], i['avg_fga_2'], i['avg_fgm3_2'], i['avg_ftm_2'], i['avg_fta_2'], i['avg_or_2'], i['avg_dr_2'],
+                 i['avg_ast_2'], i['avg_to_2'], i['avg_stl_2'], i['avg_blk_2'], i['avg_pf_2']) for i in dr]
+
+    cur.executemany('INSERT INTO tourney_data (Season, team1, team2, result, daynum, loc, avg_score_1, avg_diff_1, '
+                            'avg_numot_1, avg_fgm_1, avg_fga_1, avg_fgm3_1, avg_ftm_1, avg_fta_1, avg_or_1, avg_dr_1, '
+                            'avg_ast_1, avg_to_1, avg_stl_1, avg_blk_1, avg_pf_1, avg_score_2, avg_diff_2, avg_numot_2, '
+                            'avg_fgm_2, avg_fga_2, avg_fgm3_2, avg_ftm_2, avg_fta_2, avg_or_2, avg_dr_2, '
+                            'avg_ast_2, avg_to_2, avg_stl_2, avg_blk_2, avg_pf_2) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', to_db)
+
+    cur.execute('CREATE TABLE seeds (Year, Team, Seed);')
+
+    with open('Data/TournamentSeedsNumbers.csv', 'rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [
+            (i['Year'], i['Team'], i['Seed']) for i in dr]
+
+    cur.executemany('INSERT INTO seeds (Year, Team, Seed) VALUES (?, ?, ?);', to_db)
+
+    table = pd_sql.read_sql('SELECT DISTINCT td.Season, td.team1, td.team2, td.result, td.daynum, td.loc, td.avg_score_1, td.avg_diff_1, '
+                            'td.avg_numot_1, td.avg_fgm_1, td.avg_fga_1, td.avg_fgm3_1, td.avg_ftm_1, td.avg_fta_1, td.avg_or_1, td.avg_dr_1, '
+                            'td.avg_ast_1, td.avg_to_1, td.avg_stl_1, td.avg_blk_1, td.avg_pf_1, s1.Seed as seed1, '
+                            'td.avg_score_2, td.avg_diff_2, td.avg_numot_2, '
+                            'td.avg_fgm_2, td.avg_fga_2, td.avg_fgm3_2, td.avg_ftm_2, td.avg_fta_2, td.avg_or_2, td.avg_dr_2, '
+                            'td.avg_ast_2, td.avg_to_2, td.avg_stl_2, td.avg_blk_2, td.avg_pf_2, s2.Seed as seed2 '
+                            'FROM  tourney_data td '
+                            'LEFT OUTER JOIN seeds s1 ON td.team1 = s1.Team AND td.Season = s1.Year '
+                            'LEFT OUTER JOIN seeds s2 ON td.team2 = s2.Team AND td.Season = s2.Year;', con)
+
+    table.to_csv('Data/ALL_SeededTourneyDetailed.csv')
+    con.commit()
+    con.close()
+
+def AddVegasOdds():
+    con = sql.connect(":memory:")
+    cur = con.cursor()
+    con.text_factory = str
+
+    cur.execute('CREATE TABLE tourney_data (Season, team1, team2, result, daynum, loc, avg_score_1, avg_diff_1, '
+    'avg_numot_1, avg_fgm_1, avg_fga_1, avg_fgm3_1, avg_ftm_1, avg_fta_1, avg_or_1, avg_dr_1, '
+    'avg_ast_1, avg_to_1, avg_stl_1, avg_blk_1, avg_pf_1, seed1, '
+    'avg_score_2, avg_diff_2, avg_numot_2, '
+    'avg_fgm_2, avg_fga_2, avg_fgm3_2, avg_ftm_2, avg_fta_2, avg_or_2, avg_dr_2, '
+    'avg_ast_2, avg_to_2, avg_stl_2, avg_blk_2, avg_pf_2, seed2);')
+
+    with open('Data/ALL_SeededTourneyDetailed.csv', 'rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [
+            (i['Season'], i['team1'], i['team2'], i['result'], i['daynum'], i['loc'], i['avg_score_1'], i['avg_diff_1'],
+             i['avg_numot_1'], i['avg_fgm_1'], i['avg_fga_1'], i['avg_fgm3_1'], i['avg_ftm_1'], i['avg_fta_1'],
+             i['avg_or_1'], i['avg_dr_1'],
+             i['avg_ast_1'], i['avg_to_1'], i['avg_stl_1'], i['avg_blk_1'], i['avg_pf_1'], i['seed1'], i['avg_score_2'],
+             i['avg_diff_2'], i['avg_numot_2'],
+             i['avg_fgm_2'], i['avg_fga_2'], i['avg_fgm3_2'], i['avg_ftm_2'], i['avg_fta_2'], i['avg_or_2'],
+             i['avg_dr_2'],
+             i['avg_ast_2'], i['avg_to_2'], i['avg_stl_2'], i['avg_blk_2'], i['avg_pf_2'], i['seed2']) for i in dr]
+
+    cur.executemany('INSERT INTO tourney_data (Season, team1, team2, result, daynum, loc, avg_score_1, avg_diff_1, '
+                    'avg_numot_1, avg_fgm_1, avg_fga_1, avg_fgm3_1, avg_ftm_1, avg_fta_1, avg_or_1, avg_dr_1, '
+                    'avg_ast_1, avg_to_1, avg_stl_1, avg_blk_1, avg_pf_1, seed1, avg_score_2, avg_diff_2, avg_numot_2, '
+                    'avg_fgm_2, avg_fga_2, avg_fgm3_2, avg_ftm_2, avg_fta_2, avg_or_2, avg_dr_2, '
+                    'avg_ast_2, avg_to_2, avg_stl_2, avg_blk_2, avg_pf_2, seed2) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+                    to_db)
+
+    cur.execute('CREATE TABLE odds (Season, Team1, Team2, Odds1);')
+
+    with open('Data/VegasOddsTeamNumbers.csv', 'rb') as fin:
+        dr = csv.DictReader(fin)
+        to_db = [
+            (i['Season'], i['Team1'], i['Team2'], i['Odds1']) for i in dr]
+
+    cur.executemany('INSERT INTO odds (Season, Team1, Team2, Odds1) VALUES (?, ?, ?, ?);', to_db)
+
+    table = pd_sql.read_sql('SELECT DISTINCT td.Season, td.team1, td.team2, td.result, o1.Odds1 as odds1, o2.Odds1 as odds2, td.daynum, td.loc, '
+                            'td.avg_score_1, td.avg_diff_1, '
+                            'td.avg_numot_1, td.avg_fgm_1, td.avg_fga_1, td.avg_fgm3_1, td.avg_ftm_1, td.avg_fta_1, td.avg_or_1, td.avg_dr_1, '
+                            'td.avg_ast_1, td.avg_to_1, td.avg_stl_1, td.avg_blk_1, td.avg_pf_1, td.seed1, '
+                            'td.avg_score_2, td.avg_diff_2, td.avg_numot_2, '
+                            'td.avg_fgm_2, td.avg_fga_2, td.avg_fgm3_2, td.avg_ftm_2, td.avg_fta_2, td.avg_or_2, td.avg_dr_2, '
+                            'td.avg_ast_2, td.avg_to_2, td.avg_stl_2, td.avg_blk_2, td.avg_pf_2, td.seed2 '
+                            'FROM  tourney_data td '
+                            'LEFT OUTER JOIN odds o1 ON td.team1 = o1.Team1 AND td.Season = o1.Season AND td.Team2 = o1.Team2 '
+                            'LEFT OUTER JOIN odds o2 ON td.team1 = o2.Team2 AND td.Season = o2.Season AND td.Team2 = o2.Team1;', con)
+
+    table.to_csv('Data/ALL_CompleteTourneyDetailed.csv')
+    con.commit()
+    con.close()
+
 def main():
-    step = "Regularize Tournament Data"
+    step = "Seed-Tournament Table"
     if step == "Regularize Regular Season" :
         """CreateTable_WINSUM()"""
         """CreateTable_LOSESUM()"""
@@ -436,10 +543,12 @@ def main():
         ReformatOriginal()
     elif step == "Regularize Tournament Data" :
         ReformatTournamentData()
-    elif step == "Seed-Tournament Table":
-        return
     elif step == "Learn Vegas Odds":
         CombineSeedsOdds()
+    elif step == "Seed-Tournament Table":
+        """AddSeeds()"""
+        AddVegasOdds()
+
 
 
 
