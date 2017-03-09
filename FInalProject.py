@@ -17,7 +17,7 @@ num_neightbors = 285
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     print "Pre-Processing Data..."
-    detailed_results = pd.read_csv('RegularizedSeasonDetailed.csv')
+    detailed_results = pd.read_csv('Data/RegularizedSeasonDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -131,7 +131,6 @@ def runNeuralNetwork(X_training, y_training, X_testing, y_testing):
     lambda_values = [.000001, .0001, .1, 1, 2, 4, 8, 16, 32, 64, 128]
     NN_all_testloss = []
     for lambdaVal in lambda_values:
-        print lambdaVal
         mlp = MLPClassifier(activation='logistic', solver='sgd', alpha=lambdaVal)
 
         mlp.fit(X_training, y_training)
@@ -174,23 +173,22 @@ def main():
     (lambda_values, NN_all_testloss) = runNeuralNetwork(X_training, y_training, X_testing, y_testing)
 
     # Plot iteration vs. Percent right
-    print "Max percentage right with Logisitc Regression was %.10f" % max(all_testloss)
+    print "Max percentage right with Logisitc Regression:\t %.10f" % max(all_testloss)
     title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
     graphLoss(iterations, all_testloss, title)
 
     # Graph the number of neighbors to the percentage of correct guesses
-    print "Max percentage right with K Nearest Neighbors was %.10f" % max(KNN_all_testloss)
+    print "Max percentage right with K Nearest Neighbors:\t %.10f" % max(KNN_all_testloss)
     title = 'K Nearest Neighbors Correctly Predicted verses Num_Neighbors'
     graphLoss(neighbors, KNN_all_testloss, title)
 
-    print "Max percentage right with Random Forest was %.10f" % max(RF_all_testloss)
+    print "Max percentage right with Random Forest:\t\t %.10f" % max(RF_all_testloss)
     title = 'Random Forest Correctly Predicted versus Num_estimators on Dataset'
     graphLoss(num_estimators, RF_all_testloss, title)
 
-    print "Max percentage right with Neural Network was %.10f" % max(NN_all_testloss)
+    print "Max percentage right with Neural Network:\t\t %.10f" % max(NN_all_testloss)
     title = 'Neural Network Correctly Predicted versus Lambda Value on Dataset'
     graphLoss(lambda_values, NN_all_testloss, title)
-    print(NN_all_testloss)
 
 
 def createWeights(dataset):
