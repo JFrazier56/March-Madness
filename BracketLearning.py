@@ -13,7 +13,7 @@ num_neightbors = 285
 
 SEEDING_LAMBDA = 1 * (10 ** -5)
 
-ITERATIONS = 100
+ITERATIONS = 1
 
 all_teams_average_stats = pd.read_csv('Data/Regular Season Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
@@ -165,6 +165,7 @@ def main():
     all_outputFile = open("Results/AllResults.txt", 'w')
 
     num_games = 32
+    round = 1
 
     LR_prob = [0] * num_games
     KN_prob = [0] * num_games
@@ -245,7 +246,7 @@ def main():
         teams = bracketDataset[:, :2]
 
         for i in range(0, len(LR_res)):
-            result = LR_res[i]
+            result = LR_prob[i]
             if result >= 0.5:
                 winner = teams[i, 0]
             else:
@@ -254,7 +255,7 @@ def main():
             winning_teams_lr += [winner]
 
         for i in range(0, len(KN_res)):
-            result = KN_res[i]
+            result = KN_prob[i]
             if result >= 0.5:
                 winner = teams[i, 0]
             else:
@@ -263,7 +264,7 @@ def main():
             winning_teams_kn += [winner]
 
         for i in range(0, len(RF_res)):
-            result = RF_res[i]
+            result = RF_prob[i]
             if result >= 0.5:
                 winner = teams[i, 0]
             else:
@@ -272,7 +273,7 @@ def main():
             winning_teams_rf += [winner]
 
         for i in range(0, len(NN_res)):
-            result = NN_res[i]
+            result = NN_prob[i]
             if result >= 0.5:
                 winner = teams[i, 0]
             else:
@@ -280,8 +281,8 @@ def main():
 
             winning_teams_nn += [winner]
 
-        for i in range(0, len(total_res)):
-            result = total_res[i]
+        for i in range(0, len(LR_res_tot)):
+            result = total_prob[i]
             if result >= 0.5:
                 winner = teams[i, 0]
             else:
@@ -289,11 +290,11 @@ def main():
 
             winning_teams_all += [winner]
 
-        printWinnersToFile(winning_teams_lr, lr_outputFile)
-        printWinnersToFile(winning_teams_kn, kn_outputFile)
-        printWinnersToFile(winning_teams_rf, rf_outputFile)
-        printWinnersToFile(winning_teams_nn, nn_outputFile)
-        printWinnersToFile(winning_teams_all, all_outputFile)
+        printWinnersToFile(winning_teams_lr, lr_outputFile, round)
+        printWinnersToFile(winning_teams_kn, kn_outputFile, round)
+        printWinnersToFile(winning_teams_rf, rf_outputFile, round)
+        printWinnersToFile(winning_teams_nn, nn_outputFile, round)
+        printWinnersToFile(winning_teams_all, all_outputFile, round)
 
         if len(winning_teams_lr) != 1:
             lr_bracket_dataset = buildBracketDataset(winning_teams_lr, len(winning_teams_lr) / 2)
@@ -319,6 +320,14 @@ def main():
         NN_prob = [0] * num_games
         total_prob = [0] * num_games
 
+        winning_teams_lr = []
+        winning_teams_kn = []
+        winning_teams_rf = []
+        winning_teams_nn = []
+        winning_teams_all = []
+
+        round += 1
+
 
     lr_outputFile.close()
     kn_outputFile.close()
@@ -326,7 +335,7 @@ def main():
     nn_outputFile.close()
     all_outputFile.close()
 
-def printWinnersToFile(winning_teams, outputFile):
+def printWinnersToFile(winning_teams, outputFile, round):
     outputString = "Round " + str(round) + ": " + convertTeamIdToTeamName(winning_teams[0])[0]
 
     for i in range(1, len(winning_teams)):

@@ -17,7 +17,7 @@ num_neightbors = 285
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     print "Pre-Processing Data..."
-    detailed_results = pd.read_csv('Data/ALL_CompleteTourneyDetailed.csv')
+    detailed_results = pd.read_csv('Data/Regular Season Data/RegularizedSeasonDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -74,14 +74,14 @@ def shuffle_in_unison(a, b):
     np.random.shuffle(b)
 
 # Function for graphing iterations vs all_testloss
-def graphLoss(iterations, all_testloss, title):
+def graphLoss(iterations, all_testloss, title, fileName):
     mp.figure()
     mp.plot(iterations, all_testloss, label=title)
     mp.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
               ncol=2, mode="expand", borderaxespad=0.)
     mp.axhline(0, color='black')
     mp.axvline(0, color='black')
-    mp.show()
+    mp.savefig("Graphs/" + fileName)
 
 # Run Logistic regression with various iterations over the given datasets
 def runLogisticRegression(X_training, y_training, X_testing, y_testing):
@@ -176,11 +176,11 @@ def runNeuralNetwork(X_training, y_training, X_testing, y_testing):
 # Feature selection on the given datasets
 def featureSelect(trainingDataset, testingDataset):
     print "Starting Feature Selection..."
-    X_training = trainingDataset[:, 4:]
-    y_training = trainingDataset[:, 3]
+    X_training = trainingDataset[:, 3:]
+    y_training = trainingDataset[:, 2]
 
-    X_testing = testingDataset[:, 4:]
-    y_testing = testingDataset[:, 3]
+    X_testing = testingDataset[:, 3:]
+    y_testing = testingDataset[:, 2]
 
     randomlr = RandomizedLogisticRegression()
     X_training = randomlr.fit_transform(X_training, y_training)
@@ -209,21 +209,21 @@ def main():
 
     # # Plot iteration vs. Percent right
     print "Max percentage right with Logisitc Regression:\t %.10f" % max(all_testloss)
-    title = 'Logisitic Regression Correctly Predicted versus Iterations on Dataset'
-    graphLoss(iterations, all_testloss, title)
+    title = 'Logisitic Regression: Iterations vs Performance'
+    graphLoss(iterations, all_testloss, title, "LRIterVsPercentRight.png")
     #
     # # Graph the number of neighbors to the percentage of correct guesses
     print "Max percentage right with K Nearest Neighbors:\t %.10f" % max(KNN_all_testloss)
-    title = 'K Nearest Neighbors Correctly Predicted verses Num_Neighbors'
-    graphLoss(neighbors, KNN_all_testloss, title)
+    title = 'K Nearest Neighbors: Neighbors vs Performance'
+    graphLoss(neighbors, KNN_all_testloss, title, "KNNNeighborsVsPercentRight.png")
     #
     print "Max percentage right with Random Forest:\t\t %.10f" % max(RF_all_testloss)
-    title = 'Random Forest Correctly Predicted versus Num_estimators on Dataset'
-    graphLoss(num_estimators, RF_all_testloss, title)
+    title = 'Random Forest: Estimators vs Performance'
+    graphLoss(num_estimators, RF_all_testloss, title, "RFEstimatorsVsPercentRight.png")
     #
     print "Max percentage right with Neural Network:\t\t %.10f" % max(NN_all_testloss)
-    title = 'Neural Network Correctly Predicted versus Lambda Value on Dataset'
-    graphLoss(lambda_values, NN_all_testloss, title)
+    title = 'Neural Network: Lambda Value vs Performance'
+    graphLoss(lambda_values, NN_all_testloss, title, "NNLambaVsPercentRight")
 
 
 def createWeights(dataset):
