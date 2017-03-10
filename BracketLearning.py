@@ -28,8 +28,6 @@ def processData():
     bracket_results = pd.read_csv("Data/first_four.csv")
     bracket_data = bracket_results.values
 
-    np.random.shuffle(bracket_data)
-
     return training, test, bracket_data
 
 
@@ -137,28 +135,41 @@ def featureSelect(trainingDataset, testingDataset):
     return X_training, y_training, X_testing, y_testing, randomlr
 
 def main():
-    # Pre-Process the data
-    trainingDataset, testingDataset, bracketDataset = processData()
+    total_picks = [0] * 4
 
-    # Feature Selection
-    X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
+    for i in range(0, 10):
+        # Pre-Process the data
+        trainingDataset, testingDataset, bracketDataset = processData()
 
-    # Logistic Regression
-    resultWeights = runLogisticRegression(X_training, y_training)
+        # Feature Selection
+        X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
 
-    # KNN
-    KNN_clf = runKNearestNeighbors(X_training, y_training)
+        # Logistic Regression
+        resultWeights = runLogisticRegression(X_training, y_training)
 
-    # Random Forest
-    RF_clf = runRandomForest(X_training, y_training)
+        # KNN
+        KNN_clf = runKNearestNeighbors(X_training, y_training)
 
-    # Neural Network
-    NN_mlp = runNeuralNetwork(X_training, y_training)
+        # Random Forest
+        RF_clf = runRandomForest(X_training, y_training)
 
-    print "Training claffifiers complete"
+        # Neural Network
+        NN_mlp = runNeuralNetwork(X_training, y_training)
 
-    logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector)
+        print "Training classifiers complete"
 
+
+        LR_picks = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector)
+        KNN_picks = sklearnBracketPredictions(KNN_clf, bracketDataset, feature_selector, "K Nearest Neighbors")
+        RF_picks = sklearnBracketPredictions(RF_clf, bracketDataset, feature_selector, "Random Forest")
+        NN_picks = sklearnBracketPredictions(NN_mlp, bracketDataset, feature_selector, "Neural Network")
+
+        for i in range(0, len(LR_picks)):
+            total_picks[i] += (LR_picks[i] + KNN_picks[i] + RF_picks[i] + NN_picks[i])
+
+    for i in range(0, len(total_picks)):
+        total_picks[i] = float(total_picks[i]) / float(40)
+    print total_picks
 
 def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
     print "Starting predictions with classifier %s" % classif_name
@@ -167,7 +178,7 @@ def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_na
     # while len(winning_teams) != 1:
     winning_teams = []
 
-    teams = full_dataset[:, :1]
+    teams = full_dataset[:, :2]
     teams_data = full_dataset[:, 2:]
     teams_data = feature_selector.transform(teams_data)
 
@@ -184,6 +195,8 @@ def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_na
 
     print winning_teams
 
+    return game_results
+
     # if len(winning_teams) != 1:
     #     print winning_teams
     #     full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
@@ -199,7 +212,7 @@ def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_select
     # while len(winning_teams) != 1:
     winning_teams = []
 
-    teams = full_dataset[:, :1]
+    teams = full_dataset[:, :2]
     teams_data = full_dataset[:, 2:]
     teams_data = feature_selector.transform(teams_data)
 
@@ -215,6 +228,8 @@ def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_select
         winning_teams += [winner]
 
     print winning_teams
+
+    return game_results
 
     # if len(winning_teams) != 1:
     #     print winning_teams
@@ -236,7 +251,8 @@ def buildBracketDataset(winning_teams, num_matches):
 
 def generateBracketDataset(bracket_dataset):
     num_rows = bracket_dataset.shape[0]
-    full_dataset = np.zeros(shape=[num_rows, 32])
+    print bracket_dataset
+    full_dataset = np.zeros(shape=[num_rows, 34])
     for i in range(0, bracket_dataset.shape[0]):
         team1_id = bracket_dataset[i, 0]
         team2_id = bracket_dataset[i, 1]
@@ -245,11 +261,10 @@ def generateBracketDataset(bracket_dataset):
         team2_index = np.where(teams_array == team2_id)
         team1_stats = all_teams_average_stats_data[team1_index, :]
         team2_stats = all_teams_average_stats_data[team2_index, :]
-        print team1_id.shape
-        print team2_id.shape
-        print team1_stats.shape
-        print team2_stats.shape
-        print team1_stats
+        team1_stats = team1_stats.flatten()
+        team2_stats = team2_stats.flatten()
+        team1_stats = np.delete(team1_stats, 0)
+        team2_stats = np.delete(team2_stats, 0)
         new_row = np.hstack((team1_id, team2_id, 0, 0, team1_stats, team2_stats))
         full_dataset[i] = new_row
 
