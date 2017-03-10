@@ -5,6 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import RandomizedLogisticRegression
 from sklearn.neural_network import MLPClassifier
+import predictFirstFour
 
 SIZE_TRAINING = 0.8
 STEP_SIZE = 0.00001
@@ -12,6 +13,8 @@ LAMBDA = 16
 num_neightbors = 285
 
 SEEDING_LAMBDA = 1 * (10 ** -5)
+
+FIRST_FOUR_INDEXES = [0, 10, 16, 26]
 
 ITERATIONS = 1
 
@@ -44,10 +47,20 @@ def processSeedData():
     training = data[:, 1:]
     trainingy = data[:, 0]
 
+    return training, trainingy
+
+def makeInitialBracket(first_four_winners):
     bracket_results = pd.read_csv("Data/Bracket Games/start_bracket_games.csv")
     bracket_data = bracket_results.values
 
-    return training, trainingy, bracket_data
+    print first_four_winners
+
+    for i in range(0, len(first_four_winners)):
+        winner = first_four_winners[i]
+        index = FIRST_FOUR_INDEXES[i]
+        bracket_data[index, 1] = winner
+
+    return bracket_data
 
 def runLinearRegression(x, y):
     Ht_H = np.dot(np.transpose(x), x)
@@ -183,18 +196,27 @@ def main():
     KN_res = []
     RF_res = []
     NN_res = []
-    total_res = []
 
     # Run Linear Regression for seeing data
-    X_seeding_training, y_seeding_training, bracketDataset = processSeedData()
+    print "Learning First Four..."
+    FF_lr, FF_kn, FF_rf, FF_nn, FF_all = predictFirstFour.predictFirstFour()
+
+
+
+    X_seeding_training, y_seeding_training = processSeedData()
+    bracketDataset_lr = makeInitialBracket(FF_lr)
+    bracketDataset_kn = makeInitialBracket(FF_kn)
+    bracketDataset_rf = makeInitialBracket(FF_rf)
+    bracketDataset_nn = makeInitialBracket(FF_nn)
+    bracketDataset_all = makeInitialBracket(FF_all)
 
     seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
 
-    lr_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
-    kn_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
-    rf_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
-    nn_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
-    all_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
+    lr_bracket_dataset = generateBracketDataset(bracketDataset_lr, seedingWeights)
+    kn_bracket_dataset = generateBracketDataset(bracketDataset_kn, seedingWeights)
+    rf_bracket_dataset = generateBracketDataset(bracketDataset_rf, seedingWeights)
+    nn_bracket_dataset = generateBracketDataset(bracketDataset_nn, seedingWeights)
+    all_bracket_dataset = generateBracketDataset(bracketDataset_all, seedingWeights)
 
     while(len(LR_res) != 1):
         for i in range(0, ITERATIONS):
@@ -218,14 +240,14 @@ def main():
             NN_mlp = runNeuralNetwork(X_training, y_training)
 
             LR_res = logisitcRegressionBrackerPrediction(resultWeights, lr_bracket_dataset, feature_selector)
-            KN_res = sklearnBracketPredictions(KNN_clf, kn_bracket_dataset, feature_selector, "K Nearest Neighbors")
-            RF_res = sklearnBracketPredictions(RF_clf, rf_bracket_dataset, feature_selector, "Random Forest")
-            NN_res = sklearnBracketPredictions(NN_mlp, nn_bracket_dataset, feature_selector, "Neural Network")
+            KN_res = sklearnBracketPredictions(KNN_clf, kn_bracket_dataset, feature_selector)
+            RF_res = sklearnBracketPredictions(RF_clf, rf_bracket_dataset, feature_selector)
+            NN_res = sklearnBracketPredictions(NN_mlp, nn_bracket_dataset, feature_selector)
 
             LR_res_tot = logisitcRegressionBrackerPrediction(resultWeights, all_bracket_dataset, feature_selector)
-            KN_res_tot = sklearnBracketPredictions(KNN_clf, all_bracket_dataset, feature_selector, "K Nearest Neighbors")
-            RF_res_tot = sklearnBracketPredictions(RF_clf, all_bracket_dataset, feature_selector, "Random Forest")
-            NN_res_tot = sklearnBracketPredictions(NN_mlp, all_bracket_dataset, feature_selector, "Neural Network")
+            KN_res_tot = sklearnBracketPredictions(KNN_clf, all_bracket_dataset, feature_selector)
+            RF_res_tot = sklearnBracketPredictions(RF_clf, all_bracket_dataset, feature_selector)
+            NN_res_tot = sklearnBracketPredictions(NN_mlp, all_bracket_dataset, feature_selector)
 
             for i in range(0, len(LR_res)):
                 LR_prob[i] += LR_res[i]
@@ -347,7 +369,7 @@ def printWinnersToFile(winning_teams, outputFile, round):
 
     outputFile.write(outputString)
 
-def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
+def sklearnBracketPredictions(clf, bracket_dataset, feature_selector):
 
     teams_data = bracket_dataset[:, 2:]
 
