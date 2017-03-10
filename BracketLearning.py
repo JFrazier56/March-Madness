@@ -11,6 +11,8 @@ STEP_SIZE = 0.00001
 LAMBDA = 16
 num_neightbors = 285
 
+NUM_GAMES = 1
+
 SEEDING_LAMBDA = 1 * (10 ** -5)
 
 
@@ -36,7 +38,7 @@ def processData():
     training = data[0:row - 1, :]
     test = data[row:data.shape[0] - 1, :]
 
-    bracket_results = pd.read_csv("Data/bracket_games.csv")
+    bracket_results = pd.read_csv("Data/all_bracket_games_round_6.csv")
     bracket_data = bracket_results.values
 
     return training, test, bracket_data
@@ -110,7 +112,6 @@ def shuffle_in_unison(a, b):
     np.random.shuffle(b)
 
 # Run Logistic regression with various iterations over the given datasets
-# TODO: Pick best num iterations
 def runLogisticRegression(X_training, y_training):
 
     trainingWeights = createWeights(X_training)
@@ -120,7 +121,6 @@ def runLogisticRegression(X_training, y_training):
     return resultWeights
 
 # Run K Nearest Neighbors on the dataset for various numbers of neighbors to fit to
-# TODO: Pick best num_neighbors
 def runKNearestNeighbors(X_training, y_training):
     print "Starting K Nearest Neighbors..."
 
@@ -131,7 +131,6 @@ def runKNearestNeighbors(X_training, y_training):
     return clf
 
 # Run Random Forest on the dataset for various numbers of estimators
-# TODO: Pick best num_estimators
 def runRandomForest(X_training, y_training):
     print "Starting Random Forest..."
 
@@ -142,7 +141,6 @@ def runRandomForest(X_training, y_training):
     return clf
 
 # Run a Neural Network on the dataset for various numbers of lambda values
-# TODO: Pick best lambda value
 def runNeuralNetwork(X_training, y_training):
     print "Starting Neural Network..."
 
@@ -169,11 +167,11 @@ def featureSelect(trainingDataset, testingDataset):
 
 def main():
 
-    LR_prob = [0] * 32
-    KN_prob = [0] * 32
-    RF_prob = [0] * 32
-    NN_prob = [0] * 32
-    total_prob = [0] * 32
+    LR_prob = [0] * NUM_GAMES
+    KN_prob = [0] * NUM_GAMES
+    RF_prob = [0] * NUM_GAMES
+    NN_prob = [0] * NUM_GAMES
+    total_prob = [0] * NUM_GAMES
 
     for i in range(0, ITERATIONS):
         print "Starting iteration %d..." % i
@@ -202,32 +200,29 @@ def main():
         # Neural Network
         NN_mlp = runNeuralNetwork(X_training, y_training)
 
-        print "Training classifiers complete"
-
-
-        LR_res = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector, seedingWeights, i)
+        # LR_res = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector, seedingWeights, i)
         KN_res = sklearnBracketPredictions(KNN_clf, bracketDataset, feature_selector, seedingWeights, "K Nearest Neighbors", i)
         RF_res = sklearnBracketPredictions(RF_clf, bracketDataset, feature_selector, seedingWeights, "Random Forest", i)
         NN_res = sklearnBracketPredictions(NN_mlp, bracketDataset, feature_selector, seedingWeights, "Neural Network", i)
 
-        for i in range(0, 32):
-            LR_prob[i] += LR_res[i]
-            KN_prob[i] += KN_res[i]
-            RF_prob[i] += LR_res[i]
-            NN_prob[i] += NN_res[i]
-            total_prob[i] += (LR_res[i] + KN_res[i] + RF_res[i] + NN_res[i])
+        for i in range(0, NUM_GAMES):
+            # LR_prob[i] += LR_res[i]
+            # KN_prob[i] += KN_res[i]
+            # RF_prob[i] += RF_res[i]
+            # NN_prob[i] += NN_res[i]
+            total_prob[i] += (KN_res[i] + RF_res[i] + NN_res[i]) # + LR_res[i]
 
-    for i in range(0, 32):
-        LR_prob[i] /= ITERATIONS
-        KN_prob[i] /= ITERATIONS
-        RF_prob[i] /= ITERATIONS
-        NN_prob[i] /= ITERATIONS
-        total_prob[i] /= ITERATIONS * 4
+    for i in range(0, NUM_GAMES):
+        # LR_prob[i] /= ITERATIONS
+        # KN_prob[i] /= ITERATIONS
+        # RF_prob[i] /= ITERATIONS
+        # NN_prob[i] /= ITERATIONS
+        total_prob[i] /= ITERATIONS * 3
 
-    print LR_prob
-    print KN_prob
-    print RF_prob
-    print NN_prob
+    # print LR_prob
+    # print KN_prob
+    # print RF_prob
+    # print NN_prob
     print total_prob
 
 
