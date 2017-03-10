@@ -11,46 +11,43 @@ STEP_SIZE = 0.00001
 LAMBDA = 16
 num_neightbors = 285
 
-NUM_GAMES = 1
-
 SEEDING_LAMBDA = 1 * (10 ** -5)
-
 
 ITERATIONS = 100
 
-all_teams_average_stats = pd.read_csv('Data/averaged_stats.csv')
+all_teams_average_stats = pd.read_csv('Data/Regular Season Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
 
-team_id_to_team_name = pd.read_csv('Data/Teams.csv')
+team_id_to_team_name = pd.read_csv('Data/Regular Season Data/Teams.csv')
 team_id_to_team_name_data = team_id_to_team_name.values
 
-team_id_to_seed = pd.read_csv('Data/2017Seeds.csv')
+team_id_to_seed = pd.read_csv('Data/Tournament Data/2017Seeds.csv')
 team_id_to_seed_data = team_id_to_seed.values
 
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     print "Pre-Processing Data..."
-    detailed_results = pd.read_csv('Data/ALL_CompleteTourneyDetailed.csv')
+    detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_CompleteTourneyDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
     training = data[0:row - 1, :]
     test = data[row:data.shape[0] - 1, :]
 
-    bracket_results = pd.read_csv("Data/all_bracket_games_round_6.csv")
-    bracket_data = bracket_results.values
-
-    return training, test, bracket_data
+    return training, test
 
 def processSeedData():
-    detailed_results = pd.read_csv('Data/odds_seeds.csv')
+    detailed_results = pd.read_csv('Data/Tournament Data/odds_seeds.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     training = data[:, 1:]
     trainingy = data[:, 0]
 
-    return training, trainingy
+    bracket_results = pd.read_csv("Data/Bracket Games/start_bracket_games.csv")
+    bracket_data = bracket_results.values
+
+    return training, trainingy, bracket_data
 
 def runLinearRegression(x, y):
     Ht_H = np.dot(np.transpose(x), x)
@@ -122,8 +119,6 @@ def runLogisticRegression(X_training, y_training):
 
 # Run K Nearest Neighbors on the dataset for various numbers of neighbors to fit to
 def runKNearestNeighbors(X_training, y_training):
-    print "Starting K Nearest Neighbors..."
-
     clf = KNeighborsClassifier(330, weights="uniform")
 
     clf.fit(X_training, y_training)
@@ -132,8 +127,6 @@ def runKNearestNeighbors(X_training, y_training):
 
 # Run Random Forest on the dataset for various numbers of estimators
 def runRandomForest(X_training, y_training):
-    print "Starting Random Forest..."
-
     clf = RandomForestClassifier(max_depth=5, n_estimators=22, max_features='log2')
 
     clf.fit(X_training, y_training)
@@ -142,8 +135,6 @@ def runRandomForest(X_training, y_training):
 
 # Run a Neural Network on the dataset for various numbers of lambda values
 def runNeuralNetwork(X_training, y_training):
-    print "Starting Neural Network..."
-
     mlp = MLPClassifier(activation='logistic', solver='sgd', alpha=0.1)
 
     mlp.fit(X_training, y_training)
@@ -167,149 +158,204 @@ def featureSelect(trainingDataset, testingDataset):
 
 def main():
 
-    LR_prob = [0] * NUM_GAMES
-    KN_prob = [0] * NUM_GAMES
-    RF_prob = [0] * NUM_GAMES
-    NN_prob = [0] * NUM_GAMES
-    total_prob = [0] * NUM_GAMES
+    lr_outputFile = open("Results/LogisticRegr.txt", 'w')
+    kn_outputFile = open("Results/KNN.txt", 'w')
+    rf_outputFile = open("Results/RandomForest.txt", 'w')
+    nn_outputFile = open("Results/NeuralNetwork.txt", 'w')
+    all_outputFile = open("Results/AllResults.txt", 'w')
 
-    for i in range(0, ITERATIONS):
-        print "Starting iteration %d..." % i
-        # Pre-Process the data
+    num_games = 32
+
+    LR_prob = [0] * num_games
+    KN_prob = [0] * num_games
+    RF_prob = [0] * num_games
+    NN_prob = [0] * num_games
+    total_prob = [0] * num_games
+
+    winning_teams_lr = []
+    winning_teams_kn = []
+    winning_teams_rf = []
+    winning_teams_nn = []
+    winning_teams_all = []
+
+    LR_res = []
+    KN_res = []
+    RF_res = []
+    NN_res = []
+    total_res = []
+
+    # Run Linear Regression for seeing data
+    X_seeding_training, y_seeding_training, bracketDataset = processSeedData()
+
+    seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
+
+    bracketDataset = generateBracketDataset(bracketDataset, seedingWeights)
+
+    lr_bracket_dataset = bracketDataset
+    kn_bracket_dataset = bracketDataset
+    rf_bracket_dataset = bracketDataset
+    nn_bracket_dataset = bracketDataset
+    all_bracket_dataset = bracketDataset
+
+    while(len(LR_res) != 1):
+        for i in range(0, ITERATIONS):
+            print "Starting iteration %d..." % i
+            # Pre-Process the data
+            trainingDataset, testingDataset = processData()
+
+            # Feature Selection
+            X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
+
+            # Logistic Regression
+            resultWeights = runLogisticRegression(X_training, y_training)
+
+            # KNN
+            KNN_clf = runKNearestNeighbors(X_training, y_training)
+
+            # Random Forest
+            RF_clf = runRandomForest(X_training, y_training)
+
+            # Neural Network
+            NN_mlp = runNeuralNetwork(X_training, y_training)
+
+            LR_res = logisitcRegressionBrackerPrediction(resultWeights, lr_bracket_dataset, feature_selector)
+            KN_res = sklearnBracketPredictions(KNN_clf, kn_bracket_dataset, feature_selector, "K Nearest Neighbors")
+            RF_res = sklearnBracketPredictions(RF_clf, rf_bracket_dataset, feature_selector, "Random Forest")
+            NN_res = sklearnBracketPredictions(NN_mlp, nn_bracket_dataset, feature_selector, "Neural Network")
+
+            LR_res_tot = logisitcRegressionBrackerPrediction(resultWeights, all_bracket_dataset, feature_selector)
+            KN_res_tot = sklearnBracketPredictions(KNN_clf, all_bracket_dataset, feature_selector, "K Nearest Neighbors")
+            RF_res_tot = sklearnBracketPredictions(RF_clf, all_bracket_dataset, feature_selector, "Random Forest")
+            NN_res_tot = sklearnBracketPredictions(NN_mlp, all_bracket_dataset, feature_selector, "Neural Network")
+
+            for i in range(0, len(LR_res)):
+                LR_prob[i] += LR_res[i]
+                KN_prob[i] += KN_res[i]
+                RF_prob[i] += RF_res[i]
+                NN_prob[i] += NN_res[i]
+                total_prob[i] += (KN_res_tot[i] + RF_res_tot[i] + NN_res_tot[i] + LR_res_tot[i])
+
+        for i in range(0, len(LR_res)):
+            LR_prob[i] /= ITERATIONS
+            KN_prob[i] /= ITERATIONS
+            RF_prob[i] /= ITERATIONS
+            NN_prob[i] /= ITERATIONS
+            total_prob[i] /= ITERATIONS * 4
+
+        teams = bracketDataset[:, :2]
+
+        for i in range(0, len(LR_res)):
+            result = LR_res[i]
+            if result >= 0.5:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams_lr += [winner]
+
+        for i in range(0, len(KN_res)):
+            result = KN_res[i]
+            if result >= 0.5:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams_kn += [winner]
+
+        for i in range(0, len(RF_res)):
+            result = RF_res[i]
+            if result >= 0.5:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams_rf += [winner]
+
+        for i in range(0, len(NN_res)):
+            result = NN_res[i]
+            if result >= 0.5:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams_nn += [winner]
+
+        for i in range(0, len(total_res)):
+            result = total_res[i]
+            if result >= 0.5:
+                winner = teams[i, 0]
+            else:
+                winner = teams[i, 1]
+
+            winning_teams_all += [winner]
+
+        printWinnersToFile(winning_teams_lr, lr_outputFile)
+        printWinnersToFile(winning_teams_kn, kn_outputFile)
+        printWinnersToFile(winning_teams_rf, rf_outputFile)
+        printWinnersToFile(winning_teams_nn, nn_outputFile)
+        printWinnersToFile(winning_teams_all, all_outputFile)
+
+        if len(winning_teams_lr) != 1:
+            lr_bracket_dataset = buildBracketDataset(winning_teams_lr, len(winning_teams_lr) / 2)
+            lr_bracket_dataset = generateBracketDataset(lr_bracket_dataset, seedingWeights)
+
+            kn_bracket_dataset = buildBracketDataset(winning_teams_kn, len(winning_teams_kn) / 2)
+            kn_bracket_dataset = generateBracketDataset(kn_bracket_dataset, seedingWeights)
+
+            rf_bracket_dataset = buildBracketDataset(winning_teams_rf, len(winning_teams_rf) / 2)
+            rf_bracket_dataset = generateBracketDataset(rf_bracket_dataset, seedingWeights)
+
+            nn_bracket_dataset = buildBracketDataset(winning_teams_nn, len(winning_teams_nn) / 2)
+            nn_bracket_dataset = generateBracketDataset(nn_bracket_dataset, seedingWeights)
+
+            all_bracket_dataset = buildBracketDataset(winning_teams_all, len(winning_teams_all) / 2)
+            all_bracket_dataset = generateBracketDataset(all_bracket_dataset, seedingWeights)
+
+        num_games /= 2
+
+        LR_prob = [0] * num_games
+        KN_prob = [0] * num_games
+        RF_prob = [0] * num_games
+        NN_prob = [0] * num_games
+        total_prob = [0] * num_games
 
 
-        trainingDataset, testingDataset, bracketDataset = processData()
+    lr_outputFile.close()
+    kn_outputFile.close()
+    rf_outputFile.close()
+    nn_outputFile.close()
+    all_outputFile.close()
 
-        X_seeding_training, y_seeding_training = processSeedData()
+def printWinnersToFile(winning_teams, outputFile):
+    outputString = "Round " + str(round) + ": " + convertTeamIdToTeamName(winning_teams[0])[0]
 
-        # Feature Selection
-        X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
+    for i in range(1, len(winning_teams)):
+        outputString += ", " + convertTeamIdToTeamName(winning_teams[i])[0]
 
-        # Run Linear Regression for seeing data
-        seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
+    outputString += " \n"
 
-        # Logistic Regression
-        resultWeights = runLogisticRegression(X_training, y_training)
+    outputFile.write(outputString)
 
-        # KNN
-        KNN_clf = runKNearestNeighbors(X_training, y_training)
+def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
 
-        # Random Forest
-        RF_clf = runRandomForest(X_training, y_training)
-
-        # Neural Network
-        NN_mlp = runNeuralNetwork(X_training, y_training)
-
-        # LR_res = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector, seedingWeights, i)
-        KN_res = sklearnBracketPredictions(KNN_clf, bracketDataset, feature_selector, seedingWeights, "K Nearest Neighbors", i)
-        RF_res = sklearnBracketPredictions(RF_clf, bracketDataset, feature_selector, seedingWeights, "Random Forest", i)
-        NN_res = sklearnBracketPredictions(NN_mlp, bracketDataset, feature_selector, seedingWeights, "Neural Network", i)
-
-        for i in range(0, NUM_GAMES):
-            # LR_prob[i] += LR_res[i]
-            # KN_prob[i] += KN_res[i]
-            # RF_prob[i] += RF_res[i]
-            # NN_prob[i] += NN_res[i]
-            total_prob[i] += (KN_res[i] + RF_res[i] + NN_res[i]) # + LR_res[i]
-
-    for i in range(0, NUM_GAMES):
-        # LR_prob[i] /= ITERATIONS
-        # KN_prob[i] /= ITERATIONS
-        # RF_prob[i] /= ITERATIONS
-        # NN_prob[i] /= ITERATIONS
-        total_prob[i] /= ITERATIONS * 3
-
-    # print LR_prob
-    # print KN_prob
-    # print RF_prob
-    # print NN_prob
-    print total_prob
-
-
-def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, seeding_weights, classif_name, round):
-    # outputFile = open("Results/" + classif_name + str(round) + ".txt", 'w')
-    print "Starting predictions with classifier %s" % classif_name
-    full_dataset = generateBracketDataset(bracket_dataset, seeding_weights)
-    # winning_teams = []
-    # round = 1
-    # while len(winning_teams) != 1:
-    winning_teams = []
-
-    teams = full_dataset[:, :2]
-    teams_data = full_dataset[:, 2:]
+    teams_data = bracket_dataset[:, 2:]
 
     teams_data = feature_selector.transform(teams_data)
 
     game_results = clf.predict(teams_data)
 
-    for i in range(0, len(game_results)):
-        result = game_results[i]
-        if result == 1:
-            winner = teams[i, 0]
-        else:
-            winner = teams[i, 1]
-
-        winning_teams += [winner]
-
     return game_results
 
-    # outputString = "Round " + str(round) + ": " + convertTeamIdToTeamName(winning_teams[0])[0]
-    #
-    # for i in range(1, len(winning_teams)):
-    #     outputString += ", " + convertTeamIdToTeamName(winning_teams[i])[0]
-    #
-    # outputString += " \n"
-    #
-    # outputFile.write(outputString)
 
-    # if len(winning_teams) != 1:
-    #     full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
-    #     full_dataset = generateBracketDataset(full_dataset, seeding_weights)
+def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector):
 
-    # round += 1
-    # outputFile.close()
-    # print "Classifier %s predicted that the overall winner would be %s" % (classif_name, convertTeamIdToTeamName(winning_teams[0])[0])
+    teams_data = bracket_dataset[:, 2:]
 
-
-def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector, seeding_weights, round):
-    print "Starting predictions with logistic regression"
-    # outputFile = open("Results/LogisticRegression" + str(round) + ".txt", 'w')
-    full_dataset = generateBracketDataset(bracket_dataset, seeding_weights)
-    # winning_teams = []
-    # while len(winning_teams) != 1:
-    winning_teams = []
-
-    teams = full_dataset[:, :2]
-    teams_data = full_dataset[:, 2:]
     teams_data = feature_selector.transform(teams_data)
 
     game_results = logisticRegressionPredict(teams_data, weights)
 
-    for i in range(0, len(game_results)):
-        result = game_results[i]
-        if result == 1:
-            winner = teams[i, 0]
-        else:
-            winner = teams[i, 1]
-
-        winning_teams += [winner]
-
     return game_results
-        # outputString = "Round " + str(round) + ": " + convertTeamIdToTeamName(winning_teams[0])[0]
-        #
-        # for i in range(1, len(winning_teams)):
-        #     outputString += ", " + convertTeamIdToTeamName(winning_teams[i])[0]
-        #
-        # outputString += " \n"
-        #
-        # outputFile.write(outputString)
-
-        # if len(winning_teams) != 1:
-        #     full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
-        #     full_dataset = generateBracketDataset(full_dataset, seeding_weights)
-
-    # print "Logistic Regression predicted that the overall winner would be %s" % convertTeamIdToTeamName(winning_teams[0])[0]
-    # outputFile.close()
 
 
 def buildBracketDataset(winning_teams, num_matches):
