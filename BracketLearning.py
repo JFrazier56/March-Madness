@@ -11,8 +11,19 @@ STEP_SIZE = 0.00001
 LAMBDA = 16
 num_neightbors = 285
 
+SEEDING_LAMBDA = 1 * (10 ** -5)
+
+
+ITERATIONS = 25
+
 all_teams_average_stats = pd.read_csv('Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
+
+team_id_to_team_name = pd.read_csv('Data/Teams.csv')
+team_id_to_team_name_data = team_id_to_team_name.values
+
+team_id_to_seed = pd.read_csv('Data/2017Seeds.csv')
+team_id_to_seed_data = team_id_to_seed.values
 
 
 # Preprocesses the given data and returns training and testing sets on the data
@@ -29,6 +40,28 @@ def processData():
     bracket_data = bracket_results.values
 
     return training, test, bracket_data
+
+def processSeedData():
+    detailed_results = pd.read_csv('Data/odds_seeds.csv')
+    data = detailed_results.values
+    np.random.shuffle(data)
+    training = data[:, 1:]
+    trainingy = data[:, 0]
+
+    return training, trainingy
+
+def runLinearRegression(x, y):
+    Ht_H = np.dot(np.transpose(x), x)
+    lambda_i = np.multiply(SEEDING_LAMBDA * np.identity(x.shape[1]), x.shape[1])
+    Ht_y = np.dot(np.transpose(x), y)
+    w = np.dot(np.linalg.inv(np.add(Ht_H, lambda_i)), Ht_y)
+    return w
+
+
+def predictVegasOdds(x, w):
+    weightTranspose = np.transpose(w)
+    dotProduct = np.dot(weightTranspose, x)
+    return dotProduct
 
 
 # Run Logistic regression with L2 normalization on the dataset
@@ -137,43 +170,49 @@ def featureSelect(trainingDataset, testingDataset):
 def main():
     total_picks = [0] * 4
 
-    for i in range(0, 10):
-        # Pre-Process the data
-        trainingDataset, testingDataset, bracketDataset = processData()
+    #for i in range(0, ITERATIONS):
+        #print "Starting iteration %d..." % i
+    # Pre-Process the data
+    trainingDataset, testingDataset, bracketDataset = processData()
 
-        # Feature Selection
-        X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
+    X_seeding_training, y_seeding_training = processSeedData()
 
-        # Logistic Regression
-        resultWeights = runLogisticRegression(X_training, y_training)
+    # Feature Selection
+    X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
 
-        # KNN
-        KNN_clf = runKNearestNeighbors(X_training, y_training)
+    # Run Linear Regression for seeing data
+    seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
 
-        # Random Forest
-        RF_clf = runRandomForest(X_training, y_training)
+    # Logistic Regression
+    resultWeights = runLogisticRegression(X_training, y_training)
 
-        # Neural Network
-        NN_mlp = runNeuralNetwork(X_training, y_training)
+    # KNN
+    KNN_clf = runKNearestNeighbors(X_training, y_training)
 
-        print "Training classifiers complete"
+    # Random Forest
+    RF_clf = runRandomForest(X_training, y_training)
+
+    # Neural Network
+    NN_mlp = runNeuralNetwork(X_training, y_training)
+
+    print "Training classifiers complete"
 
 
-        LR_picks = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector)
-        KNN_picks = sklearnBracketPredictions(KNN_clf, bracketDataset, feature_selector, "K Nearest Neighbors")
-        RF_picks = sklearnBracketPredictions(RF_clf, bracketDataset, feature_selector, "Random Forest")
-        NN_picks = sklearnBracketPredictions(NN_mlp, bracketDataset, feature_selector, "Neural Network")
+    LR_picks = logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector, seedingWeights)
+    KNN_picks = sklearnBracketPredictions(KNN_clf, bracketDataset, feature_selector, seedingWeights, "K Nearest Neighbors")
+    RF_picks = sklearnBracketPredictions(RF_clf, bracketDataset, feature_selector, seedingWeights, "Random Forest")
+    NN_picks = sklearnBracketPredictions(NN_mlp, bracketDataset, feature_selector, seedingWeights, "Neural Network")
 
-        for i in range(0, len(LR_picks)):
-            total_picks[i] += (LR_picks[i] + KNN_picks[i] + RF_picks[i] + NN_picks[i])
+    # for i in range(0, len(LR_picks)):
+    #     total_picks[i] += (LR_picks[i] + KNN_picks[i] + RF_picks[i] + NN_picks[i])
 
-    for i in range(0, len(total_picks)):
-        total_picks[i] = float(total_picks[i]) / float(40)
-    print total_picks
+    # for i in range(0, len(total_picks)):
+    #     total_picks[i] = float(total_picks[i]) / float(ITERATIONS * 4)
+    # print total_picks
 
-def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
+def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, seeding_weights, classif_name):
     print "Starting predictions with classifier %s" % classif_name
-    full_dataset = generateBracketDataset(bracket_dataset)
+    full_dataset = generateBracketDataset(bracket_dataset, seeding_weights)
     # winning_teams = []
     # while len(winning_teams) != 1:
     winning_teams = []
@@ -205,9 +244,9 @@ def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_na
     #print "Classifier %s predicted that the overall winner would be %d" % (classif_name, winning_teams[0])
 
 
-def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector):
+def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector, seeding_weights):
     print "Starting predictions with logistic regression"
-    full_dataset = generateBracketDataset(bracket_dataset)
+    full_dataset = generateBracketDataset(bracket_dataset, seeding_weights)
     # winning_teams = []
     # while len(winning_teams) != 1:
     winning_teams = []
@@ -244,28 +283,41 @@ def buildBracketDataset(winning_teams, num_matches):
     for i in range(0, num_matches):
         team1 = winning_teams[2 * i]
         team2 = winning_teams[(2 * i) + 1]
-        dataset[i] = [team1, team2]
+        dataset[i] = np.array([[team1, team2]])
 
     return dataset
 
 
-def generateBracketDataset(bracket_dataset):
+def generateBracketDataset(bracket_dataset, seeding_weights):
     num_rows = bracket_dataset.shape[0]
-    print bracket_dataset
-    full_dataset = np.zeros(shape=[num_rows, 34])
+    full_dataset = np.zeros(shape=[num_rows, 37])
     for i in range(0, bracket_dataset.shape[0]):
         team1_id = bracket_dataset[i, 0]
         team2_id = bracket_dataset[i, 1]
+
         teams_array = all_teams_average_stats['team']
+        seeding_array = team_id_to_seed['team']
+
         team1_index = np.where(teams_array == team1_id)
         team2_index = np.where(teams_array == team2_id)
+
         team1_stats = all_teams_average_stats_data[team1_index, :]
         team2_stats = all_teams_average_stats_data[team2_index, :]
         team1_stats = team1_stats.flatten()
         team2_stats = team2_stats.flatten()
+
         team1_stats = np.delete(team1_stats, 0)
         team2_stats = np.delete(team2_stats, 0)
-        new_row = np.hstack((team1_id, team2_id, 0, 0, team1_stats, team2_stats))
+
+        team1_seed_index = np.where(seeding_array == team1_id)
+        team2_seed_index = np.where(seeding_array == team2_id)
+        team1_seed = team_id_to_seed_data[team1_seed_index, 1]
+        team2_seed = team_id_to_seed_data[team2_seed_index, 1]
+
+        seeds_array = np.array([[team1_seed, team2_seed]])
+        vegasOdd = predictVegasOdds(seeds_array, seeding_weights)
+
+        new_row = np.hstack((team1_id, team2_id, vegasOdd, 0, 0, team1_stats, team1_seed, team2_stats, team2_seed))
         full_dataset[i] = new_row
 
     return full_dataset
@@ -277,6 +329,12 @@ def createWeights(dataset):
         weights += [0]
 
     return weights
+
+def convertTeamIdToTeamName(team_id):
+    team_id_array = team_id_to_team_name['Team_Id']
+    team_index = np.where(team_id_array == team_id)
+    team_name = team_id_to_team_name_data[team_index, 1]
+    return team_name
 
 if __name__ == "__main__":
     main()
