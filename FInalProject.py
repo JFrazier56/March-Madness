@@ -17,7 +17,7 @@ num_neightbors = 285
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     print "Pre-Processing Data..."
-    detailed_results = pd.read_csv('Data/RegularizedSeasonDetailed.csv')
+    detailed_results = pd.read_csv('Data/ALL_CompleteTourneyDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -175,11 +175,11 @@ def runNeuralNetwork(X_training, y_training, X_testing, y_testing):
 # Feature selection on the given datasets
 def featureSelect(trainingDataset, testingDataset):
     print "Starting Feature Selection..."
-    X_training = trainingDataset[:, 3:]
-    y_training = trainingDataset[:, 2]
+    X_training = trainingDataset[:, 4:]
+    y_training = trainingDataset[:, 3]
 
-    X_testing = testingDataset[:, 3:]
-    y_testing = testingDataset[:, 2]
+    X_testing = testingDataset[:, 4:]
+    y_testing = testingDataset[:, 3]
 
     randomlr = RandomizedLogisticRegression()
     X_training = randomlr.fit_transform(X_training, y_training)
