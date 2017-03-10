@@ -158,11 +158,11 @@ def featureSelect(trainingDataset, testingDataset):
 
 def main():
 
-    lr_outputFile = open("Results/LogisticRegr.txt", 'w')
-    kn_outputFile = open("Results/KNN.txt", 'w')
-    rf_outputFile = open("Results/RandomForest.txt", 'w')
-    nn_outputFile = open("Results/NeuralNetwork.txt", 'w')
-    all_outputFile = open("Results/AllResults.txt", 'w')
+    lr_outputFile = open("Data/Bracket Predictions/LogisticRegr.txt", 'w')
+    kn_outputFile = open("Data/Bracket Predictions/KNN.txt", 'w')
+    rf_outputFile = open("Data/Bracket Predictions/RandomForest.txt", 'w')
+    nn_outputFile = open("Data/Bracket Predictions/NeuralNetwork.txt", 'w')
+    all_outputFile = open("Data/Bracket Predictions/AllResults.txt", 'w')
 
     num_games = 32
     round = 1
@@ -190,13 +190,11 @@ def main():
 
     seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
 
-    bracketDataset = generateBracketDataset(bracketDataset, seedingWeights)
-
-    lr_bracket_dataset = bracketDataset
-    kn_bracket_dataset = bracketDataset
-    rf_bracket_dataset = bracketDataset
-    nn_bracket_dataset = bracketDataset
-    all_bracket_dataset = bracketDataset
+    lr_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
+    kn_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
+    rf_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
+    nn_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
+    all_bracket_dataset = generateBracketDataset(bracketDataset, seedingWeights)
 
     while(len(LR_res) != 1):
         for i in range(0, ITERATIONS):
@@ -243,50 +241,54 @@ def main():
             NN_prob[i] /= ITERATIONS
             total_prob[i] /= ITERATIONS * 4
 
-        teams = bracketDataset[:, :2]
+        teams_lr = lr_bracket_dataset[:, :2]
+        teams_kn = kn_bracket_dataset[:, :2]
+        teams_rf = rf_bracket_dataset[:, :2]
+        teams_nn = nn_bracket_dataset[:, :2]
+        teams_all = all_bracket_dataset[:, :2]
 
         for i in range(0, len(LR_res)):
             result = LR_prob[i]
             if result >= 0.5:
-                winner = teams[i, 0]
+                winner = teams_lr[i, 0]
             else:
-                winner = teams[i, 1]
+                winner = teams_lr[i, 1]
 
             winning_teams_lr += [winner]
 
         for i in range(0, len(KN_res)):
             result = KN_prob[i]
             if result >= 0.5:
-                winner = teams[i, 0]
+                winner = teams_kn[i, 0]
             else:
-                winner = teams[i, 1]
+                winner = teams_kn[i, 1]
 
             winning_teams_kn += [winner]
 
         for i in range(0, len(RF_res)):
             result = RF_prob[i]
             if result >= 0.5:
-                winner = teams[i, 0]
+                winner = teams_rf[i, 0]
             else:
-                winner = teams[i, 1]
+                winner = teams_rf[i, 1]
 
             winning_teams_rf += [winner]
 
         for i in range(0, len(NN_res)):
             result = NN_prob[i]
             if result >= 0.5:
-                winner = teams[i, 0]
+                winner = teams_nn[i, 0]
             else:
-                winner = teams[i, 1]
+                winner = teams_nn[i, 1]
 
             winning_teams_nn += [winner]
 
         for i in range(0, len(LR_res_tot)):
             result = total_prob[i]
             if result >= 0.5:
-                winner = teams[i, 0]
+                winner = teams_all[i, 0]
             else:
-                winner = teams[i, 1]
+                winner = teams_all[i, 1]
 
             winning_teams_all += [winner]
 
