@@ -12,7 +12,8 @@ LAMBDA = 16
 num_neightbors = 285
 
 all_teams_average_stats = pd.read_csv('Data/averaged_stats.csv')
-all_teams_average_stats = all_teams_average_stats.data
+all_teams_average_stats_data = all_teams_average_stats.values
+
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
@@ -24,8 +25,8 @@ def processData():
     training = data[0:row - 1, :]
     test = data[row:data.shape[0] - 1, :]
 
-    bracket_results = pd.read_csv("Data/.....")
-    bracket_data = bracket_results.data
+    bracket_results = pd.read_csv("Data/first_four.csv")
+    bracket_data = bracket_results.values
 
     np.random.shuffle(bracket_data)
 
@@ -82,7 +83,8 @@ def shuffle_in_unison(a, b):
 def runLogisticRegression(X_training, y_training):
 
     trainingWeights = createWeights(X_training)
-    resultWeights = logisticRegressionSGD(X_training, y_training, trainingWeights, STEP_SIZE, LAMBDA, 5)
+
+    resultWeights = logisticRegressionSGD(X_training, y_training, trainingWeights, STEP_SIZE, LAMBDA, 15)
 
     return resultWeights
 
@@ -90,11 +92,10 @@ def runLogisticRegression(X_training, y_training):
 # TODO: Pick best num_neighbors
 def runKNearestNeighbors(X_training, y_training):
     print "Starting K Nearest Neighbors..."
-    neighbors = [i * 10 for i in range(1, 60)]
-    for neighbor in neighbors:
-        clf = KNeighborsClassifier(neighbor, weights="uniform")
 
-        clf.fit(X_training, y_training)
+    clf = KNeighborsClassifier(330, weights="uniform")
+
+    clf.fit(X_training, y_training)
 
     return clf
 
@@ -102,11 +103,10 @@ def runKNearestNeighbors(X_training, y_training):
 # TODO: Pick best num_estimators
 def runRandomForest(X_training, y_training):
     print "Starting Random Forest..."
-    num_estimators = [i for i in range(1, 40)]
-    for estimators in num_estimators:
-        clf = RandomForestClassifier(max_depth=5, n_estimators=estimators, max_features='log2')
 
-        clf.fit(X_training, y_training)
+    clf = RandomForestClassifier(max_depth=5, n_estimators=22, max_features='log2')
+
+    clf.fit(X_training, y_training)
 
     return clf
 
@@ -114,11 +114,10 @@ def runRandomForest(X_training, y_training):
 # TODO: Pick best lambda value
 def runNeuralNetwork(X_training, y_training):
     print "Starting Neural Network..."
-    lambda_values = [.000001, .0001, .1, 1, 2, 4, 8, 16, 32, 64, 128]
-    for lambdaVal in lambda_values:
-        mlp = MLPClassifier(activation='logistic', solver='sgd', alpha=lambdaVal)
 
-        mlp.fit(X_training, y_training)
+    mlp = MLPClassifier(activation='logistic', solver='sgd', alpha=0.1)
+
+    mlp.fit(X_training, y_training)
 
     return mlp
 
@@ -156,67 +155,77 @@ def main():
     # Neural Network
     NN_mlp = runNeuralNetwork(X_training, y_training)
 
+    print "Training claffifiers complete"
+
+    logisitcRegressionBrackerPrediction(resultWeights, bracketDataset, feature_selector)
+
 
 def sklearnBracketPredictions(clf, bracket_dataset, feature_selector, classif_name):
+    print "Starting predictions with classifier %s" % classif_name
     full_dataset = generateBracketDataset(bracket_dataset)
+    # winning_teams = []
+    # while len(winning_teams) != 1:
     winning_teams = []
-    while len(winning_teams) != 1:
-        winning_teams = []
 
-        teams = full_dataset[:, :1]
-        teams_data = full_dataset[:, 2:]
-        teams_data = feature_selector.transform(teams_data)
+    teams = full_dataset[:, :1]
+    teams_data = full_dataset[:, 2:]
+    teams_data = feature_selector.transform(teams_data)
 
-        game_results = clf.predict(teams_data)
+    game_results = clf.predict(teams_data)
 
-        for i in range(0, len(game_results)):
-            result = game_results[i]
-            if result == 1:
-                winner = teams[i, 0]
-            else:
-                winner = teams[i, 1]
+    for i in range(0, len(game_results)):
+        result = game_results[i]
+        if result == 1:
+            winner = teams[i, 0]
+        else:
+            winner = teams[i, 1]
 
-            winning_teams += [winner]
+        winning_teams += [winner]
 
-        if len(winning_teams) != 1:
-            print winning_teams
-            full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
-            full_dataset = generateBracketDataset(full_dataset)
+    print winning_teams
 
-    print "Classifier %s predicted that the overall winner would be %d" % (classif_name, winning_teams[0])
+    # if len(winning_teams) != 1:
+    #     print winning_teams
+    #     full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
+    #     full_dataset = generateBracketDataset(full_dataset)
+
+    #print "Classifier %s predicted that the overall winner would be %d" % (classif_name, winning_teams[0])
 
 
 def logisitcRegressionBrackerPrediction(weights, bracket_dataset, feature_selector):
+    print "Starting predictions with logistic regression"
     full_dataset = generateBracketDataset(bracket_dataset)
+    # winning_teams = []
+    # while len(winning_teams) != 1:
     winning_teams = []
-    while len(winning_teams) != 1:
-        winning_teams = []
 
-        teams = full_dataset[:, :1]
-        teams_data = full_dataset[:, 2:]
-        teams_data = feature_selector.transform(teams_data)
+    teams = full_dataset[:, :1]
+    teams_data = full_dataset[:, 2:]
+    teams_data = feature_selector.transform(teams_data)
 
-        game_results = logisticRegressionPredict(teams_data, weights)
+    game_results = logisticRegressionPredict(teams_data, weights)
 
-        for i in range(0, len(game_results)):
-            result = game_results[i]
-            if result == 1:
-                winner = teams[i, 0]
-            else:
-                winner = teams[i, 1]
+    for i in range(0, len(game_results)):
+        result = game_results[i]
+        if result == 1:
+            winner = teams[i, 0]
+        else:
+            winner = teams[i, 1]
 
-            winning_teams += [winner]
+        winning_teams += [winner]
 
-        if len(winning_teams) != 1:
-            print winning_teams
-            full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
-            full_dataset = generateBracketDataset(full_dataset)
+    print winning_teams
 
-    print "Logistic Regression predicted that the overall winner would be %d" % winning_teams[0]
+    # if len(winning_teams) != 1:
+    #     print winning_teams
+    #     full_dataset = buildBracketDataset(winning_teams, len(winning_teams) / 2)
+    #     full_dataset = generateBracketDataset(full_dataset)
+    #
+    # print "Logistic Regression predicted that the overall winner would be %d" % winning_teams[0]
 
 
 def buildBracketDataset(winning_teams, num_matches):
-    dataset = np.zeroes(shape=(num_matches, 2))
+    dataset = np.zeros(shape=(num_matches, 2))
     for i in range(0, num_matches):
         team1 = winning_teams[2 * i]
         team2 = winning_teams[(2 * i) + 1]
@@ -227,13 +236,21 @@ def buildBracketDataset(winning_teams, num_matches):
 
 def generateBracketDataset(bracket_dataset):
     num_rows = bracket_dataset.shape[0]
-    full_dataset = np.zeroes(shape=[num_rows, 32])
-    for i in range(0, bracket_dataset.shape[1]):
-        team1_id = bracket_dataset[i, 1]
-        team2_id = bracket_dataset[i, 2]
-        team1_stats = all_teams_average_stats[team1_id]
-        team2_stats = all_teams_average_stats[team2_id]
-        new_row = np.c_[team1_id, team2_id, 0, 0, team1_stats, team2_stats]
+    full_dataset = np.zeros(shape=[num_rows, 32])
+    for i in range(0, bracket_dataset.shape[0]):
+        team1_id = bracket_dataset[i, 0]
+        team2_id = bracket_dataset[i, 1]
+        teams_array = all_teams_average_stats['team']
+        team1_index = np.where(teams_array == team1_id)
+        team2_index = np.where(teams_array == team2_id)
+        team1_stats = all_teams_average_stats_data[team1_index, :]
+        team2_stats = all_teams_average_stats_data[team2_index, :]
+        print team1_id.shape
+        print team2_id.shape
+        print team1_stats.shape
+        print team2_stats.shape
+        print team1_stats
+        new_row = np.hstack((team1_id, team2_id, 0, 0, team1_stats, team2_stats))
         full_dataset[i] = new_row
 
     return full_dataset
