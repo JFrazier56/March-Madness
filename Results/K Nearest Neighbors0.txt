@@ -1,0 +1,6 @@
+Round 1: Kansas, South Carolina, Virginia, Purdue, St Mary's CA, CS Bakersfield, Providence, Louisville, Gonzaga, Northwestern, SMU, Princeton, MTSU, Akron, Miami FL, Oregon, Villanova, Wichita St, UNC Wilmington, ETSU, USC, Winthrop, Maryland, Baylor, North Carolina, Dayton, Cincinnati, West Virginia, Xavier, Arizona, Michigan St, Kentucky 
+Round 2: Kansas, Virginia, St Mary's CA, Louisville, Gonzaga, SMU, Akron, Oregon, Villanova, UNC Wilmington, Winthrop, Maryland, Dayton, West Virginia, Xavier, Michigan St 
+Round 3: Kansas, St Mary's CA, SMU, Oregon, Villanova, Maryland, Dayton, Michigan St 
+Round 4: Kansas, SMU, Villanova, Michigan St 
+Round 5: Kansas, Michigan St 
+Round 6: Kansas 
