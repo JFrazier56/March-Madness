@@ -11,7 +11,6 @@ STEP_SIZE = 0.00001
 LAMBDA = 16
 num_neightbors = 285
 SEEDING_LAMBDA = 1 * (10 ** -5)
-ITERATIONS = 10
 
 all_teams_average_stats = pd.read_csv('Data/Regular Season Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
@@ -153,7 +152,7 @@ def featureSelect(trainingDataset, testingDataset):
 
     return X_training, y_training, X_testing, y_testing, randomlr
 
-def predictFirstFour():
+def predictFirstFour(ITERATIONS):
 
     num_games = 4
 

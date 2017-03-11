@@ -16,7 +16,7 @@ SEEDING_LAMBDA = 1 * (10 ** -5)
 
 FIRST_FOUR_INDEXES = [0, 10, 16, 26]
 
-ITERATIONS = 1
+ITERATIONS = 10
 
 all_teams_average_stats = pd.read_csv('Data/Regular Season Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
@@ -30,7 +30,6 @@ team_id_to_seed_data = team_id_to_seed.values
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
-    print "Pre-Processing Data..."
     detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_CompleteTourneyDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
@@ -155,21 +154,37 @@ def runNeuralNetwork(X_training, y_training):
     return mlp
 
 # Feature selection on the given datasets
-def featureSelect(trainingDataset, testingDataset):
-    print "Starting Feature Selection..."
-    X_training = trainingDataset[:, 4:]
-    y_training = trainingDataset[:, 3]
+def featureSelect(trainingDataset, testingDataset, elite_eight):
+    if elite_eight:
+        X_training = trainingDataset[:, 5:]
+        y_training = trainingDataset[:, 3]
 
-    X_testing = testingDataset[:, 4:]
-    y_testing = testingDataset[:, 3]
+        X_testing = testingDataset[:, 5:]
+        y_testing = testingDataset[:, 3]
 
-    randomlr = RandomizedLogisticRegression()
-    X_training = randomlr.fit_transform(X_training, y_training)
-    X_testing = randomlr.transform(X_testing)
+        X_training = np.delete(X_training, [17, 33], axis=1)
+
+        X_testing = np.delete(X_testing, [17, 33], axis=1)
+
+        randomlr = RandomizedLogisticRegression()
+        X_training = randomlr.fit_transform(X_training, y_training)
+        X_testing = randomlr.transform(X_testing)
+    else:
+        X_training = trainingDataset[:, 4:]
+        y_training = trainingDataset[:, 3]
+
+        X_testing = testingDataset[:, 4:]
+        y_testing = testingDataset[:, 3]
+
+        randomlr = RandomizedLogisticRegression()
+        X_training = randomlr.fit_transform(X_training, y_training)
+        X_testing = randomlr.transform(X_testing)
 
     return X_training, y_training, X_testing, y_testing, randomlr
 
 def main():
+
+    elite_eight = False
 
     lr_outputFile = open("Data/Bracket Predictions/LogisticRegr.txt", 'w')
     kn_outputFile = open("Data/Bracket Predictions/KNN.txt", 'w')
@@ -199,9 +214,7 @@ def main():
 
     # Run Linear Regression for seeing data
     print "Learning First Four..."
-    FF_lr, FF_kn, FF_rf, FF_nn, FF_all = predictFirstFour.predictFirstFour()
-
-
+    FF_lr, FF_kn, FF_rf, FF_nn, FF_all = predictFirstFour.predictFirstFour(ITERATIONS)
 
     X_seeding_training, y_seeding_training = processSeedData()
     bracketDataset_lr = makeInitialBracket(FF_lr)
@@ -212,20 +225,20 @@ def main():
 
     seedingWeights = runLinearRegression(X_seeding_training, y_seeding_training)
 
-    lr_bracket_dataset = generateBracketDataset(bracketDataset_lr, seedingWeights)
-    kn_bracket_dataset = generateBracketDataset(bracketDataset_kn, seedingWeights)
-    rf_bracket_dataset = generateBracketDataset(bracketDataset_rf, seedingWeights)
-    nn_bracket_dataset = generateBracketDataset(bracketDataset_nn, seedingWeights)
-    all_bracket_dataset = generateBracketDataset(bracketDataset_all, seedingWeights)
+    lr_bracket_dataset = generateBracketDataset(bracketDataset_lr, seedingWeights, elite_eight)
+    kn_bracket_dataset = generateBracketDataset(bracketDataset_kn, seedingWeights, elite_eight)
+    rf_bracket_dataset = generateBracketDataset(bracketDataset_rf, seedingWeights, elite_eight)
+    nn_bracket_dataset = generateBracketDataset(bracketDataset_nn, seedingWeights, elite_eight)
+    all_bracket_dataset = generateBracketDataset(bracketDataset_all, seedingWeights, elite_eight)
 
     while(len(LR_res) != 1):
         for i in range(0, ITERATIONS):
-            print "Starting iteration %d..." % i
+            print "Starting Round %d iteration %d..." % (round, i + 1)
             # Pre-Process the data
             trainingDataset, testingDataset = processData()
 
             # Feature Selection
-            X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset)
+            X_training, y_training, X_testing, y_testing, feature_selector = featureSelect(trainingDataset, testingDataset, elite_eight)
 
             # Logistic Regression
             resultWeights = runLogisticRegression(X_training, y_training)
@@ -320,23 +333,26 @@ def main():
         printWinnersToFile(winning_teams_nn, nn_outputFile, round)
         printWinnersToFile(winning_teams_all, all_outputFile, round)
 
+        num_games /= 2
+
+        if num_games == 4:
+            elite_eight = True
+
         if len(winning_teams_lr) != 1:
             lr_bracket_dataset = buildBracketDataset(winning_teams_lr, len(winning_teams_lr) / 2)
-            lr_bracket_dataset = generateBracketDataset(lr_bracket_dataset, seedingWeights)
+            lr_bracket_dataset = generateBracketDataset(lr_bracket_dataset, seedingWeights, elite_eight)
 
             kn_bracket_dataset = buildBracketDataset(winning_teams_kn, len(winning_teams_kn) / 2)
-            kn_bracket_dataset = generateBracketDataset(kn_bracket_dataset, seedingWeights)
+            kn_bracket_dataset = generateBracketDataset(kn_bracket_dataset, seedingWeights, elite_eight)
 
             rf_bracket_dataset = buildBracketDataset(winning_teams_rf, len(winning_teams_rf) / 2)
-            rf_bracket_dataset = generateBracketDataset(rf_bracket_dataset, seedingWeights)
+            rf_bracket_dataset = generateBracketDataset(rf_bracket_dataset, seedingWeights, elite_eight)
 
             nn_bracket_dataset = buildBracketDataset(winning_teams_nn, len(winning_teams_nn) / 2)
-            nn_bracket_dataset = generateBracketDataset(nn_bracket_dataset, seedingWeights)
+            nn_bracket_dataset = generateBracketDataset(nn_bracket_dataset, seedingWeights, elite_eight)
 
             all_bracket_dataset = buildBracketDataset(winning_teams_all, len(winning_teams_all) / 2)
-            all_bracket_dataset = generateBracketDataset(all_bracket_dataset, seedingWeights)
-
-        num_games /= 2
+            all_bracket_dataset = generateBracketDataset(all_bracket_dataset, seedingWeights, elite_eight)
 
         LR_prob = [0] * num_games
         KN_prob = [0] * num_games
@@ -401,9 +417,13 @@ def buildBracketDataset(winning_teams, num_matches):
     return dataset
 
 
-def generateBracketDataset(bracket_dataset, seeding_weights):
+def generateBracketDataset(bracket_dataset, seeding_weights, elite_eight):
+
     num_rows = bracket_dataset.shape[0]
-    full_dataset = np.zeros(shape=[num_rows, 37])
+    if elite_eight:
+        full_dataset = np.zeros(shape=[num_rows, 34])
+    else:
+        full_dataset = np.zeros(shape=[num_rows, 37])
     for i in range(0, bracket_dataset.shape[0]):
         team1_id = bracket_dataset[i, 0]
         team2_id = bracket_dataset[i, 1]
@@ -422,20 +442,24 @@ def generateBracketDataset(bracket_dataset, seeding_weights):
         team1_stats = np.delete(team1_stats, 0)
         team2_stats = np.delete(team2_stats, 0)
 
-        team1_seed_index = np.where(seeding_array == team1_id)
-        team2_seed_index = np.where(seeding_array == team2_id)
-        team1_seed = team_id_to_seed_data[team1_seed_index, 1]
-        team2_seed = team_id_to_seed_data[team2_seed_index, 1]
+        if elite_eight:
+            new_row = np.hstack((team1_id, team2_id, 0, 0, team1_stats, team2_stats))
+            full_dataset[i] = new_row
+        else:
+            team1_seed_index = np.where(seeding_array == team1_id)
+            team2_seed_index = np.where(seeding_array == team2_id)
+            team1_seed = team_id_to_seed_data[team1_seed_index, 1]
+            team2_seed = team_id_to_seed_data[team2_seed_index, 1]
 
-        team1_seed = team1_seed.flatten()
-        team2_seed = team2_seed.flatten()
+            team1_seed = team1_seed.flatten()
+            team2_seed = team2_seed.flatten()
 
-        seeds_array = np.array([team1_seed, team2_seed])
+            seeds_array = np.array([team1_seed, team2_seed])
 
-        vegasOdd = predictVegasOdds(seeds_array, seeding_weights)
+            vegasOdd = predictVegasOdds(seeds_array, seeding_weights)
 
-        new_row = np.hstack((team1_id, team2_id, vegasOdd, 0, 0, team1_stats, team1_seed, team2_stats, team2_seed))
-        full_dataset[i] = new_row
+            new_row = np.hstack((team1_id, team2_id, vegasOdd, 0, 0, team1_stats, team1_seed, team2_stats, team2_seed))
+            full_dataset[i] = new_row
 
     return full_dataset
 
