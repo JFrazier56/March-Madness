@@ -9,7 +9,7 @@ LAMBDA_FOUND = True
 LAMBDA = 1 * (10 ** -5)
 
 def processData():
-    detailed_results = pd.read_csv('data\odds_seeds.csv')
+    detailed_results = pd.read_csv('data\\tournament data\odds_seeds.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
