@@ -16,7 +16,9 @@ SEEDING_LAMBDA = 1 * (10 ** -5)
 
 FIRST_FOUR_INDEXES = [0, 4, 16, 28]
 
-ITERATIONS = 10
+# FIRST_FOUR_INDEXES = [4, 8, 16, 20]
+
+ITERATIONS = 30
 
 all_teams_average_stats = pd.read_csv('Data/Regular Season Data/averaged_stats.csv')
 all_teams_average_stats_data = all_teams_average_stats.values
@@ -27,10 +29,14 @@ team_id_to_team_name_data = team_id_to_team_name.values
 team_id_to_seed = pd.read_csv('Data/Tournament Data/2017ActualsSeeds.csv')
 team_id_to_seed_data = team_id_to_seed.values
 
+# team_id_to_seed = pd.read_csv('Data/Tournament Data/2016Seeds.csv')
+# team_id_to_seed_data = team_id_to_seed.values
+
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_CompleteTourneyDetailed.csv')
+    # detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_2016CompleteTourneyDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -50,6 +56,7 @@ def processSeedData():
 
 def makeInitialBracket(first_four_winners):
     bracket_results = pd.read_csv("Data/Bracket Games/start_bracket_games.csv")
+    # bracket_results = pd.read_csv("Data/Bracket Games/2016_starting_games.csv")
     bracket_data = bracket_results.values
 
     print first_four_winners
@@ -215,6 +222,12 @@ def main():
     # Run Linear Regression for seeing data
     print "Learning First Four..."
     FF_lr, FF_kn, FF_rf, FF_nn, FF_all = predictFirstFour.predictFirstFour(ITERATIONS)
+
+    printWinnersToFile(FF_lr, lr_outputFile, 0)
+    printWinnersToFile(FF_kn, kn_outputFile, 0)
+    printWinnersToFile(FF_rf, rf_outputFile, 0)
+    printWinnersToFile(FF_nn, nn_outputFile, 0)
+    printWinnersToFile(FF_all, all_outputFile, 0)
 
     X_seeding_training, y_seeding_training = processSeedData()
     bracketDataset_lr = makeInitialBracket(FF_lr)
@@ -457,6 +470,12 @@ def generateBracketDataset(bracket_dataset, seeding_weights, elite_eight):
             seeds_array = np.array([team1_seed, team2_seed])
 
             vegasOdd = predictVegasOdds(seeds_array, seeding_weights)
+
+            # print "team 1 id: %d" % team1_id
+            # print "team 2 id: %d" % team2_id
+            # print team1_seed
+            # print team2_seed
+            # print
 
             new_row = np.hstack((team1_id, team2_id, vegasOdd, 0, 0, team1_stats, team1_seed, team2_stats, team2_seed))
             full_dataset[i] = new_row

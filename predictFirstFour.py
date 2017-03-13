@@ -21,10 +21,14 @@ team_id_to_team_name_data = team_id_to_team_name.values
 team_id_to_seed = pd.read_csv('Data/Tournament Data/2017ActualsSeeds.csv')
 team_id_to_seed_data = team_id_to_seed.values
 
+# team_id_to_seed = pd.read_csv('Data/Tournament Data/2016Seeds.csv')
+# team_id_to_seed_data = team_id_to_seed.values
+
 
 # Preprocesses the given data and returns training and testing sets on the data
 def processData():
     detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_CompleteTourneyDetailed.csv')
+    # detailed_results = pd.read_csv('Data/Multiple Seasons Data/ALL_2016CompleteTourneyDetailed.csv')
     data = detailed_results.values
     np.random.shuffle(data)
     row = int(math.floor(0.8 * data.shape[0]))
@@ -41,6 +45,7 @@ def processSeedData():
     trainingy = data[:, 0]
 
     bracket_results = pd.read_csv("Data/Bracket Games/first_four.csv")
+    # bracket_results = pd.read_csv("Data/Bracket Games/2016_first_four.csv")
     bracket_data = bracket_results.values
 
     return training, trainingy, bracket_data

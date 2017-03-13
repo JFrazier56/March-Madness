@@ -1,0 +1,9 @@
+Round 0: Southern Univ, Wichita St, FL Gulf Coast, Michigan 
+Round 1: Kansas, Connecticut, Maryland, California, Arizona, Miami FL, Iowa, Villanova, Oregon, St Joseph's PA, Baylor, Duke, Texas, Texas A&M, VA Commonwealth, Oklahoma, North Carolina, USC, Indiana, Kentucky, Notre Dame, West Virginia, Pittsburgh, Xavier, Virginia, Butler, Purdue, Iowa St, Gonzaga, Utah, Dayton, Michigan St 
+Round 2: Kansas, Maryland, Arizona, Villanova, Oregon, Duke, Texas A&M, Oklahoma, North Carolina, Indiana, West Virginia, Xavier, Virginia, Purdue, Gonzaga, Michigan St 
+Round 3: Kansas, Villanova, Oregon, Oklahoma, North Carolina, Xavier, Purdue, Michigan St 
+Round 4: Villanova, Oklahoma, North Carolina, Michigan St 
+Round 5: Villanova, Michigan St 
+Round 6: Michigan St 
+
+Score: 22 + 22 + 20 + 24 + 16 + 0 = 104/192
