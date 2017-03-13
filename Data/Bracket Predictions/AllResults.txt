@@ -1,0 +1,6 @@
+Round 1: Villanova, Wisconsin, Virginia, Florida, SMU, Baylor, South Carolina, Duke, Gonzaga, Northwestern, Princeton, West Virginia, Maryland, Florida St, St Mary's CA, Arizona, Kansas, Michigan St, Iowa St, Purdue, Creighton, Oregon, Michigan, Louisville, North Carolina, Seton Hall, Minnesota, Butler, Cincinnati, UCLA, Dayton, Kentucky 
+Round 2: Villanova, Virginia, SMU, Duke, Gonzaga, Princeton, Maryland, St Mary's CA, Kansas, Purdue, Oregon, Louisville, North Carolina, Butler, Cincinnati, Kentucky 
+Round 3: Villanova, SMU, Gonzaga, St Mary's CA, Kansas, Oregon, North Carolina, Kentucky 
+Round 4: SMU, St Mary's CA, Kansas, North Carolina 
+Round 5: SMU, Kansas 
+Round 6: SMU 

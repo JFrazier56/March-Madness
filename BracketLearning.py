@@ -24,7 +24,7 @@ all_teams_average_stats_data = all_teams_average_stats.values
 team_id_to_team_name = pd.read_csv('Data/Regular Season Data/Teams.csv')
 team_id_to_team_name_data = team_id_to_team_name.values
 
-team_id_to_seed = pd.read_csv('Data/Tournament Data/2017Seeds.csv')
+team_id_to_seed = pd.read_csv('Data/Tournament Data/2017ActualsSeeds.csv')
 team_id_to_seed_data = team_id_to_seed.values
 
 
