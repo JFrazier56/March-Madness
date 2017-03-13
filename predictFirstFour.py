@@ -18,7 +18,7 @@ all_teams_average_stats_data = all_teams_average_stats.values
 team_id_to_team_name = pd.read_csv('Data/Regular Season Data/Teams.csv')
 team_id_to_team_name_data = team_id_to_team_name.values
 
-team_id_to_seed = pd.read_csv('Data/Tournament Data/2017Seeds.csv')
+team_id_to_seed = pd.read_csv('Data/Tournament Data/2017ActualsSeeds.csv')
 team_id_to_seed_data = team_id_to_seed.values
 
 
@@ -325,14 +325,6 @@ def generateBracketDataset(bracket_dataset, seeding_weights):
         seeds_array = np.array([team1_seed, team2_seed])
 
         vegasOdd = predictVegasOdds(seeds_array, seeding_weights)
-
-        print team1_id
-        print team2_id
-        print vegasOdd
-        print team1_stats
-        print team2_stats
-        print team1_seed
-        print team2_seed
 
         new_row = np.hstack((team1_id, team2_id, vegasOdd, 0, 0, team1_stats, team1_seed, team2_stats, team2_seed))
         full_dataset[i] = new_row
