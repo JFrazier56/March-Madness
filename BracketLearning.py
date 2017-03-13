@@ -14,7 +14,7 @@ num_neightbors = 285
 
 SEEDING_LAMBDA = 1 * (10 ** -5)
 
-FIRST_FOUR_INDEXES = [0, 10, 16, 26]
+FIRST_FOUR_INDEXES = [0, 4, 16, 28]
 
 ITERATIONS = 10
 
